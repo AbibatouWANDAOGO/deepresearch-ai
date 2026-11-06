@@ -59,6 +59,14 @@ class Settings(BaseSettings):
     # --- Downloads -----------------------------------------------------------------
     http_timeout_seconds: float = Field(default=20.0, gt=0)
     max_download_mb: float = Field(default=10.0, gt=0)
+    max_redirects: int = Field(default=5, ge=0, le=10)
+    respect_robots_txt: bool = True
+    user_agent: str = "DeepResearchAI/0.1 (research assistant; educational project)"
+
+    # --- Document processing -------------------------------------------------------
+    max_pdf_pages: int = Field(default=60, ge=1)
+    min_document_chars: int = Field(default=300, ge=0)
+    max_document_chars: int = Field(default=200_000, ge=1000)
 
     # --- RAG -----------------------------------------------------------------------
     chunk_size_tokens: int = Field(default=800, ge=100)
@@ -111,6 +119,10 @@ class Settings(BaseSettings):
     @property
     def reports_dir(self) -> Path:
         return self.storage_dir / "reports"
+
+    @property
+    def documents_db_path(self) -> Path:
+        return self.storage_dir / "documents.db"
 
     @property
     def search_dir(self) -> Path:
