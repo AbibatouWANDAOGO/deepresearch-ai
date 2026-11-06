@@ -4,7 +4,7 @@ An autonomous research agent. Given a question, it plans the research, searches 
 indexes them for retrieval-augmented generation (RAG), fact-checks the important claims and writes a structured report
 with traceable citations.
 
-**Status: phase 4 of 11 (RAG).** Full research is not available yet; see the [roadmap](#roadmap).
+**Status: phase 5 of 11 (agents).** Full research is not available yet; see the [roadmap](#roadmap).
 
 ## Design principles
 
@@ -41,8 +41,8 @@ All settings are environment variables, documented in [.env.example](.env.exampl
 
 | Group | Settings |
 | --- | --- |
-| Language model | `LLM_PROVIDER` (`ollama` / `anthropic` / `openai`), model names, API keys, timeout |
-| Cost guardrails | `ALLOW_PAID_APIS` (default `false`), `MAX_COST_USD_PER_RESEARCH` |
+| Language model | `LLM_PROVIDER` (`ollama` / `anthropic`; `openai` is reserved but not implemented yet), model names, API keys, timeout, Ollama context size, output length |
+| Cost guardrails | `ALLOW_PAID_APIS` (default `false`), `MAX_COST_USD_PER_RESEARCH`, Anthropic prices used for the estimate |
 | Web search | `SEARCH_PROVIDER` (`tavily` / `duckduckgo`), `SEARCH_FALLBACK`, `TAVILY_API_KEY`, monthly credit limit, results per query, retries |
 | Research limits | up to 3 extra research cycles, sources per research, maximum duration |
 | Downloads | HTTP timeout, maximum download size, redirects, robots.txt, user agent |
@@ -138,6 +138,31 @@ would be cut silently when embedded, hiding their last third from semantic searc
 Measured on a laptop CPU (Intel i7-1355U): 24 chunks from 3 web pages indexed and queried in under a minute; a 19-page
 PDF gives 47 chunks.
 
+## Agents
+
+The language model is reached through [app/llm.py](app/llm.py), which always asks for **structured output**: the
+JSON schema of a Pydantic model is sent with the request and the answer is validated against it (one corrective retry).
+
+- **Ollama** (default, free): the schema is passed as Ollama's required output `format`; default model `qwen2.5:3b`
+  with an 8,192-token context. Install [Ollama](https://ollama.com/), then `ollama pull qwen2.5:3b`.
+- **Anthropic** (paid, opt-in): `messages.parse` with the Pydantic model as `output_format`. A cost tracker estimates the
+  spend of every call from the token counts and refuses the next call once `MAX_COST_USD_PER_RESEARCH` is reached.
+
+| Agent | Input | Output | Guardrails applied in code |
+| --- | --- | --- | --- |
+| [Planner](app/agents/planner.py) | question, language | objective, sub-questions with search queries, quality criteria | count capped, ids renumbered, duplicate/empty queries removed, never empty |
+| [Researcher](app/agents/researcher.py) | sub-question | sources to collect, primary-source flags, follow-up queries | results merged and de-duplicated across queries, known URLs skipped, invented labels ignored (falls back to search ranking) |
+| [Analyst](app/agents/analyst.py) | sub-question, retrieved passages | summary, claims with cited chunks, disagreements, gaps | cited passage ids checked; invented ids dropped and counted; uncited claims kept for the fact checker |
+| [Fact Checker](app/agents/fact_checker.py) | claim, passages retrieved for it | `VERIFIED` / `PARTIALLY_VERIFIED` / `CONFLICTING` / `UNVERIFIED`, evidence, justification | a status is never stronger than its cited evidence (e.g. `VERIFIED` without a valid supporting passage becomes `UNVERIFIED`) |
+| [Writer](app/agents/writer.py) | checked claims with source labels | title, summary, sections, limitations, bibliography | citations to unknown sources removed; bibliography built from sources actually cited; every non-verified claim listed as an uncertainty |
+
+Web content reaches the models only inside `<document>` tags, with the rule that it is data and never instructions;
+attempts to close the tag from inside a page are neutralized. The Writer never sees web text, only checked claims.
+
+Measured with `qwen2.5:3b` on a laptop CPU (Intel i7-1355U, no GPU): about 50 to 95 seconds per agent call; one
+plan, one analysis, three fact checks and a short report took 6 calls and 6.5 minutes, at no cost. A small local model
+tends to be lenient when judging evidence: the code guardrails stop unsupported verdicts, and phase 9 measures the rest.
+
 ## Roadmap
 
 | Phase | Content | Status |
@@ -146,7 +171,7 @@ PDF gives 47 chunks.
 | 2 | Web search: isolated search interface, errors, quotas, timeouts, raw results saved | done |
 | 3 | Document collection: web pages and PDFs, cleaning, deduplication, metadata | done |
 | 4 | RAG: chunking, embeddings, Qdrant, BM25, hybrid fusion, reranking | done |
-| 5 | Agents: Planner, Researcher, Analyst, Fact Checker, Writer (Pydantic inputs/outputs) | |
+| 5 | Agents: Planner, Researcher, Analyst, Fact Checker, Writer (Pydantic inputs/outputs) | done |
 | 6 | Orchestration with LangGraph: routing, iteration limits, checkpointing | |
 | 7 | Citations and reports: claim traceability, Markdown and PDF export | |
 | 8 | Streamlit dashboard: history, progress, sources | |
@@ -173,8 +198,12 @@ app/
     vector_store.py  Qdrant, local embedded mode
     reranker.py      multilingual cross-encoder
     retriever.py     BM25, dense search, Reciprocal Rank Fusion, reranking, incremental indexing
+  agents/
+    base.py          untrusted-content framing, passage labels, citation checks
+    planner.py, researcher.py, analyst.py, fact_checker.py, writer.py
+  llm.py             Ollama and Anthropic clients with structured output and cost tracking
 frontend/
   dashboard.py       Streamlit interface
 storage/             local documents, vector index, database, reports (not committed)
-tests/               144 tests, no network, no credits and no model download
+tests/               177 tests, no network, no credits and no model download
 ```

@@ -11,6 +11,7 @@ have to be compared. A cross-encoder then reorders the best candidates.
 from __future__ import annotations
 
 import argparse
+import atexit
 import math
 import re
 import sys
@@ -158,7 +159,9 @@ def build_retriever(settings: Settings) -> HybridRetriever:
     embedder = E5Embedder(settings.embedding_model, settings.embedding_batch_size)
     reranker = CrossEncoderReranker(settings.reranker_model) if settings.rerank_enabled else None
     settings.qdrant_dir.mkdir(parents=True, exist_ok=True)
-    store = VectorStore(QdrantClient(path=str(settings.qdrant_dir)), settings.qdrant_collection, embedder.dimension)
+    client = QdrantClient(path=str(settings.qdrant_dir))
+    atexit.register(client.close)  # close before interpreter shutdown, not in a late __del__
+    store = VectorStore(client, settings.qdrant_collection, embedder.dimension)
     db = connect(settings.documents_db_path)
     return HybridRetriever(ChunkRepository(db), SourceRepository(db), store, embedder, reranker, settings)
 

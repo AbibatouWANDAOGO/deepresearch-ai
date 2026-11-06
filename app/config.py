@@ -36,7 +36,13 @@ class Settings(BaseSettings):
     anthropic_model: str = "claude-opus-5-5"
     openai_api_key: SecretStr | None = None
     openai_model: str | None = None  # no default: set it explicitly if you use OpenAI
-    llm_timeout_seconds: float = Field(default=120.0, gt=0)
+    llm_timeout_seconds: float = Field(default=300.0, gt=0)
+    llm_max_output_tokens: int = Field(default=4096, ge=256)
+    ollama_num_ctx: int = Field(default=8192, ge=2048)  # context window requested from Ollama
+    ollama_temperature: float = Field(default=0.1, ge=0, le=2)
+    # Price used to estimate and cap spending (USD per million tokens, claude-opus-5-5).
+    anthropic_input_usd_per_mtok: float = Field(default=4.0, ge=0)
+    anthropic_output_usd_per_mtok: float = Field(default=20.0, ge=0)
 
     # --- Cost guardrails -----------------------------------------------------------
     allow_paid_apis: bool = False
