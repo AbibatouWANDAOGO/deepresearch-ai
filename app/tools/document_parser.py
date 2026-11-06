@@ -37,13 +37,16 @@ EXCERPT_CHARS = 300
 _CONTROL = re.compile("[\x00-\x08\x0b\x0c\x0e-\x1f\x7f\u200b\ufeff]")  # controls, zero-width space, BOM
 _PAGE_NUMBER = re.compile(r"^(page\s*)?\d{1,4}(\s*(/|of|sur)\s*\d{1,4})?$", re.IGNORECASE)
 
+# Typographic ligatures from PDFs (one glyph for "fi", "fl"...), which break word matching.
+_LIGATURES = str.maketrans({"\ufb00": "ff", "\ufb01": "fi", "\ufb02": "fl", "\ufb03": "ffi", "\ufb04": "ffl", "\ufb05": "st", "\ufb06": "st"})
 
 # --- Cleaning ----------------------------------------------------------------------------
 
 
 def clean_text(text: str) -> str:
     """Normalize unicode and whitespace, drop control characters and empty runs of lines."""
-    text = unicodedata.normalize("NFC", text).replace("\r\n", "\n").replace("\r", "\n")
+    text = unicodedata.normalize("NFC", text).translate(_LIGATURES)
+    text = text.replace("\r\n", "\n").replace("\r", "\n")
     text = _CONTROL.sub("", text)
     lines = [re.sub(r"[ \t ]+", " ", line).strip() for line in text.split("\n")]
     text = "\n".join(lines)

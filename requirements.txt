@@ -6,3 +6,7 @@ httpx>=0.27,<1
 ddgs>=9.0,<10
 trafilatura>=2.0,<3
 pymupdf>=1.24
+# CPU-only PyTorch keeps the install small: pip install torch --index-url https://download.pytorch.org/whl/cpu
+torch>=2.4
+sentence-transformers>=3.0
+qdrant-client>=1.12

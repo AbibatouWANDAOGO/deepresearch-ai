@@ -4,7 +4,7 @@ An autonomous research agent. Given a question, it plans the research, searches 
 indexes them for retrieval-augmented generation (RAG), fact-checks the important claims and writes a structured report
 with traceable citations.
 
-**Status: phase 3 of 11 (document collection).** Full research is not available yet; see the [roadmap](#roadmap).
+**Status: phase 4 of 11 (RAG).** Full research is not available yet; see the [roadmap](#roadmap).
 
 ## Design principles
 
@@ -47,7 +47,7 @@ All settings are environment variables, documented in [.env.example](.env.exampl
 | Research limits | up to 3 extra research cycles, sources per research, maximum duration |
 | Downloads | HTTP timeout, maximum download size, redirects, robots.txt, user agent |
 | Documents | maximum PDF pages, minimum and maximum characters per document |
-| RAG | chunk size 800 tokens with 120 overlap, multilingual embedding model, reranker, top-k |
+| RAG | chunk size 480 tokens with 72 overlap, multilingual embedding model, reranker, top-k, RRF constant, Qdrant collection |
 
 ## Web search
 
@@ -105,6 +105,39 @@ Access statuses: `ok`, `duplicate`, `too_short`, `extraction_failed`, `unsafe_ur
 `timeout`, `network_error`, `too_large`, `unsupported_type`, `too_many_redirects`. Extracted text is stored and later
 quoted as data: instructions found in a page are never executed.
 
+## Retrieval (RAG)
+
+```bash
+python -m app.rag.retriever --research-id demo-batteries --query "Why have lithium-ion battery prices fallen?"
+```
+
+The first run downloads the embedding model and the reranker (about 1.5 GB in total, with CPU PyTorch); everything then
+runs locally on the CPU.
+
+1. **Chunking** ([chunking.py](app/rag/chunking.py)): whole sentences and paragraphs packed into chunks of up to
+   `CHUNK_SIZE_TOKENS` (counted with the embedding model's own tokenizer), each repeating the last sentences of the
+   previous one up to `CHUNK_OVERLAP_TOKENS`. Every chunk keeps its character offsets in the source text and, for PDFs,
+   its pages, so a citation can point to the exact passage.
+2. **Embeddings** ([embeddings.py](app/rag/embeddings.py)): `intfloat/multilingual-e5-base` with its `query:` /
+   `passage:` prefixes and normalized vectors; a French question finds passages in English documents.
+3. **Vector store** ([vector_store.py](app/rag/vector_store.py)): Qdrant in local embedded mode (no server), cosine
+   distance, filtered by research. Chunk texts are also kept in SQLite, so BM25 and citations never depend on Qdrant.
+4. **Hybrid retrieval** ([retriever.py](app/rag/retriever.py)): dense search and BM25 (accent-insensitive, French and
+   English stop words) each return their top `RETRIEVAL_TOP_K`; their rankings are merged with **Reciprocal Rank Fusion**
+   (score = sum of 1 / (k + rank), k = 60), which needs no score calibration between the two.
+5. **Reranking** ([reranker.py](app/rag/reranker.py)): the multilingual cross-encoder
+   `cross-encoder/mmarco-mMiniLMv2-L12-H384-v1` reads question and passage together and keeps the best `RERANK_TOP_K`.
+
+Each retrieved passage carries its source (title, URL, type, dates), its location (page or character range) and the
+ranks and scores from every stage. Indexing is incremental: sources already chunked are skipped.
+
+**Why 480 tokens and not the ~800 of the original brief:** multilingual-e5-base reads at most 512 tokens. Chunks of 800
+would be cut silently when embedded, hiding their last third from semantic search. The application refuses any
+`CHUNK_SIZE_TOKENS` the model cannot read in full.
+
+Measured on a laptop CPU (Intel i7-1355U): 24 chunks from 3 web pages indexed and queried in under a minute; a 19-page
+PDF gives 47 chunks.
+
 ## Roadmap
 
 | Phase | Content | Status |
@@ -112,7 +145,7 @@ quoted as data: instructions found in a page are never executed.
 | 1 | Setup: configuration, dependencies, starter interface, tests | done |
 | 2 | Web search: isolated search interface, errors, quotas, timeouts, raw results saved | done |
 | 3 | Document collection: web pages and PDFs, cleaning, deduplication, metadata | done |
-| 4 | RAG: chunking, embeddings, Qdrant, BM25, hybrid fusion, reranking | |
+| 4 | RAG: chunking, embeddings, Qdrant, BM25, hybrid fusion, reranking | done |
 | 5 | Agents: Planner, Researcher, Analyst, Fact Checker, Writer (Pydantic inputs/outputs) | |
 | 6 | Orchestration with LangGraph: routing, iteration limits, checkpointing | |
 | 7 | Citations and reports: claim traceability, Markdown and PDF export | |
@@ -134,8 +167,14 @@ app/
     web_scraper.py   streamed downloads, redirects, robots.txt, size limits
     pdf_reader.py    PDF text and metadata, page by page
     document_parser.py  extraction, cleaning, de-duplication, storage
+  rag/
+    chunking.py      sentence-aware chunks with offsets and pages
+    embeddings.py    multilingual E5 embeddings (local)
+    vector_store.py  Qdrant, local embedded mode
+    reranker.py      multilingual cross-encoder
+    retriever.py     BM25, dense search, Reciprocal Rank Fusion, reranking, incremental indexing
 frontend/
   dashboard.py       Streamlit interface
 storage/             local documents, vector index, database, reports (not committed)
-tests/               122 tests, no network and no credits
+tests/               144 tests, no network, no credits and no model download
 ```

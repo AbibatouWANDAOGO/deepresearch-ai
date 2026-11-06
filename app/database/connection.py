@@ -30,6 +30,21 @@ CREATE TABLE IF NOT EXISTS sources (
 );
 CREATE INDEX IF NOT EXISTS idx_sources_research ON sources (research_id);
 CREATE INDEX IF NOT EXISTS idx_sources_hash ON sources (research_id, content_hash);
+
+CREATE TABLE IF NOT EXISTS chunks (
+    chunk_id        TEXT PRIMARY KEY,
+    source_id       TEXT NOT NULL REFERENCES sources (source_id) ON DELETE CASCADE,
+    research_id     TEXT NOT NULL,
+    chunk_index     INTEGER NOT NULL,
+    text            TEXT NOT NULL,
+    n_tokens        INTEGER NOT NULL,
+    start_char      INTEGER NOT NULL,
+    end_char        INTEGER NOT NULL,
+    page_start      INTEGER,
+    page_end        INTEGER
+);
+CREATE INDEX IF NOT EXISTS idx_chunks_research ON chunks (research_id);
+CREATE INDEX IF NOT EXISTS idx_chunks_source ON chunks (source_id);
 """
 
 

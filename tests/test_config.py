@@ -30,7 +30,8 @@ def test_defaults_are_free_and_local():
 
 def test_defaults_follow_the_specification():
     s = make()
-    assert (s.chunk_size_tokens, s.chunk_overlap_tokens) == (800, 120)
+    # below the 512-token limit of multilingual-e5-base (the specification's 800 would be truncated)
+    assert (s.chunk_size_tokens, s.chunk_overlap_tokens) == (480, 72)
     assert s.max_extra_research_cycles == 3
     assert s.embedding_model == "intfloat/multilingual-e5-base"
 

@@ -211,3 +211,7 @@ def test_pdf_without_metadata_title_gets_a_guessed_title(collector):
     pages = ["Battery Price Survey\nJane Doe, John Roe\n" + "Prices fell again this year. " * 10, "Annex"]
     c = collector({"https://site.org/survey.pdf": (OK, "pdf", make_pdf(pages, title=None))})
     assert c.collect(["https://site.org/survey.pdf"], "r1").sources[0].title == "Battery Price Survey"
+
+
+def test_pdf_ligatures_are_expanded():
+    assert clean_text("We ﬁnd speciﬁc eﬀects in the ﬂow") == "We find specific effects in the flow"

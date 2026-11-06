@@ -69,12 +69,19 @@ class Settings(BaseSettings):
     max_document_chars: int = Field(default=200_000, ge=1000)
 
     # --- RAG -----------------------------------------------------------------------
-    chunk_size_tokens: int = Field(default=800, ge=100)
-    chunk_overlap_tokens: int = Field(default=120, ge=0)
+    # The specification suggests ~800 tokens, but multilingual-e5-base reads at most 512
+    # tokens: longer chunks would be silently truncated when embedded. 480 + 15% overlap
+    # keeps every chunk entirely visible to the embedding model.
+    chunk_size_tokens: int = Field(default=480, ge=50)
+    chunk_overlap_tokens: int = Field(default=72, ge=0)
     embedding_model: str = "intfloat/multilingual-e5-base"
+    embedding_batch_size: int = Field(default=16, ge=1)
     reranker_model: str = "cross-encoder/mmarco-mMiniLMv2-L12-H384-v1"
+    rerank_enabled: bool = True
     retrieval_top_k: int = Field(default=20, ge=1)
     rerank_top_k: int = Field(default=6, ge=1)
+    rrf_k: int = Field(default=60, ge=1)
+    qdrant_collection: str = "chunks"
 
     # --- Storage -------------------------------------------------------------------
     storage_dir: Path = PROJECT_ROOT / "storage"

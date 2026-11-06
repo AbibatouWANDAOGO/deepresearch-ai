@@ -93,3 +93,33 @@ class SourceRepository:
         data = dict(row)
         data["truncated"] = bool(data["truncated"])
         return Source(**data)
+
+
+class ChunkRepository:
+    """Chunks of usable sources; the text is kept here so BM25 and citations never need Qdrant."""
+
+    def __init__(self, connection: sqlite3.Connection):
+        self._db = connection
+
+    def save_many(self, chunks: list) -> None:
+        rows = [c.model_dump() for c in chunks]
+        if not rows:
+            return
+        columns = ", ".join(rows[0])
+        placeholders = ", ".join(f":{name}" for name in rows[0])
+        self._db.executemany(f"INSERT OR REPLACE INTO chunks ({columns}) VALUES ({placeholders})", rows)
+        self._db.commit()
+
+    def list(self, research_id: str) -> list:
+        from app.rag.chunking import Chunk
+
+        rows = self._db.execute(
+            "SELECT * FROM chunks WHERE research_id = ? ORDER BY source_id, chunk_index", (research_id,)
+        ).fetchall()
+        return [Chunk(**dict(r)) for r in rows]
+
+    def indexed_sources(self, research_id: str) -> set[str]:
+        rows = self._db.execute(
+            "SELECT DISTINCT source_id FROM chunks WHERE research_id = ?", (research_id,)
+        ).fetchall()
+        return {r["source_id"] for r in rows}
