@@ -4,7 +4,7 @@ An autonomous research agent. Given a question, it plans the research, searches 
 indexes them for retrieval-augmented generation (RAG), fact-checks the important claims and writes a structured report
 with traceable citations.
 
-**Status: phase 1 of 11 (project setup).** Research is not available yet; see the [roadmap](#roadmap).
+**Status: phase 2 of 11 (web search).** Full research is not available yet; see the [roadmap](#roadmap).
 
 ## Design principles
 
@@ -43,17 +43,41 @@ All settings are environment variables, documented in [.env.example](.env.exampl
 | --- | --- |
 | Language model | `LLM_PROVIDER` (`ollama` / `anthropic` / `openai`), model names, API keys, timeout |
 | Cost guardrails | `ALLOW_PAID_APIS` (default `false`), `MAX_COST_USD_PER_RESEARCH` |
-| Web search | `SEARCH_PROVIDER` (`tavily` / `duckduckgo`), `TAVILY_API_KEY`, results per query |
+| Web search | `SEARCH_PROVIDER` (`tavily` / `duckduckgo`), `SEARCH_FALLBACK`, `TAVILY_API_KEY`, monthly credit limit, results per query, retries |
 | Research limits | up to 3 extra research cycles, sources per research, maximum duration |
 | Downloads | HTTP timeout, maximum download size |
 | RAG | chunk size 800 tokens with 120 overlap, multilingual embedding model, reranker, top-k |
+
+## Web search
+
+```bash
+python -m app.tools.web_search "What is retrieval-augmented generation?" --max-results 3
+```
+
+[app/tools/web_search.py](app/tools/web_search.py) puts every search engine behind one interface returning normalized
+results (rank, title, URL, snippet, score, publication date when known):
+
+- **Providers**: [Tavily](https://www.tavily.com/) (basic depth, 1 credit per query; free tier of 1,000 credits a
+  month) and DuckDuckGo through `ddgs` (no key, unofficial) as the fallback.
+- **Typed errors**: invalid key (401) and exhausted quota (432/433) are never retried; rate limits (429), capacity
+  errors (434), server errors, timeouts and network failures are retried with exponential backoff, honoring
+  `Retry-After` (capped at 30 s). An invalid request (400/422) is not sent to the fallback, since it would fail there too.
+- **Fallback**: if Tavily is unconfigured, rejected or unavailable, the same query goes to DuckDuckGo and the response
+  records why (`fallback_used`, `errors`).
+- **Local quota guard**: a monthly credit ledger (`storage/search/credit_usage.json`) refuses a Tavily search *before*
+  it is sent once `TAVILY_MONTHLY_CREDIT_LIMIT` would be exceeded.
+- **Traceability**: every raw provider response is saved as JSON under `storage/search/<research id>/`, next to the
+  normalized results; duplicate URLs (case, trailing slash, fragment) and non-web URLs are removed.
+
+DuckDuckGo sometimes answers "no results" for ordinary queries when its backends are blocked (observed intermittently
+during development), so an empty DuckDuckGo answer is treated as a temporary failure and retried.
 
 ## Roadmap
 
 | Phase | Content | Status |
 | --- | --- | --- |
 | 1 | Setup: configuration, dependencies, starter interface, tests | done |
-| 2 | Web search: isolated search interface, errors, quotas, timeouts, raw results saved | |
+| 2 | Web search: isolated search interface, errors, quotas, timeouts, raw results saved | done |
 | 3 | Document collection: web pages and PDFs, cleaning, deduplication, metadata | |
 | 4 | RAG: chunking, embeddings, Qdrant, BM25, hybrid fusion, reranking | |
 | 5 | Agents: Planner, Researcher, Analyst, Fact Checker, Writer (Pydantic inputs/outputs) | |
@@ -70,8 +94,10 @@ All settings are environment variables, documented in [.env.example](.env.exampl
 app/
   config.py          settings and validation
   main.py            command-line configuration check
+  tools/
+    web_search.py    search providers, retries, fallback, credit ledger, raw-result storage
 frontend/
   dashboard.py       Streamlit interface
 storage/             local documents, vector index, database, reports (not committed)
-tests/               configuration and startup tests
+tests/               configuration, startup and web search tests (no network, no credits)
 ```

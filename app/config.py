@@ -44,8 +44,12 @@ class Settings(BaseSettings):
 
     # --- Web search ----------------------------------------------------------------
     search_provider: SearchProvider = "tavily"
+    search_fallback: Literal["duckduckgo", "none"] = "duckduckgo"
     tavily_api_key: SecretStr | None = None
+    # Local guard on the free tier (1,000 credits a month; a basic search costs 1 credit).
+    tavily_monthly_credit_limit: int = Field(default=1000, ge=0)
     max_results_per_query: int = Field(default=5, ge=1, le=20)
+    search_max_retries: int = Field(default=2, ge=0, le=5)
 
     # --- Research limits -----------------------------------------------------------
     max_extra_research_cycles: int = Field(default=3, ge=0, le=3)
@@ -109,6 +113,10 @@ class Settings(BaseSettings):
         return self.storage_dir / "reports"
 
     @property
+    def search_dir(self) -> Path:
+        return self.storage_dir / "search"
+
+    @property
     def qdrant_dir(self) -> Path:
         return self.storage_dir / "qdrant"
 
@@ -117,7 +125,7 @@ class Settings(BaseSettings):
         return self.storage_dir / "deepresearch.db"
 
     def ensure_storage(self) -> None:
-        for directory in (self.documents_dir, self.reports_dir, self.qdrant_dir):
+        for directory in (self.documents_dir, self.reports_dir, self.qdrant_dir, self.search_dir):
             directory.mkdir(parents=True, exist_ok=True)
 
     @staticmethod
@@ -140,6 +148,7 @@ class Settings(BaseSettings):
             "Paid APIs": "enabled" if self.allow_paid_apis else "disabled",
             "Cost cap per research": f"${self.max_cost_usd_per_research:.2f}",
             "Search provider": self.search_provider,
+            "Search fallback": self.search_fallback,
             "Tavily API key": is_set(self.tavily_api_key),
             "Anthropic API key": is_set(self.anthropic_api_key),
             "OpenAI API key": is_set(self.openai_api_key),

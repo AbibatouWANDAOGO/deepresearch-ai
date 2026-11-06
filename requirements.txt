@@ -1,4 +1,6 @@
-# Runtime dependencies (phase 1). More are added as each phase needs them.
+# Runtime dependencies. More are added as each phase needs them.
 pydantic>=2.11,<3
 pydantic-settings>=2.10,<3
 streamlit>=1.45,<2
+httpx>=0.27,<1
+ddgs>=9.0,<10
