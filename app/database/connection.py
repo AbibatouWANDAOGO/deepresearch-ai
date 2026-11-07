@@ -45,13 +45,31 @@ CREATE TABLE IF NOT EXISTS chunks (
 );
 CREATE INDEX IF NOT EXISTS idx_chunks_research ON chunks (research_id);
 CREATE INDEX IF NOT EXISTS idx_chunks_source ON chunks (source_id);
+
+CREATE TABLE IF NOT EXISTS researches (
+    research_id     TEXT PRIMARY KEY,
+    question        TEXT NOT NULL,
+    language        TEXT NOT NULL,
+    status          TEXT NOT NULL,
+    params          TEXT NOT NULL,
+    created_at      TEXT NOT NULL,
+    updated_at      TEXT NOT NULL,
+    finished_at     TEXT,
+    current_step    TEXT,
+    stop_reason     TEXT,
+    error           TEXT,
+    pid             INTEGER
+);
+CREATE INDEX IF NOT EXISTS idx_researches_created ON researches (created_at);
 """
 
 
 def connect(path: Path) -> sqlite3.Connection:
     path.parent.mkdir(parents=True, exist_ok=True)
-    connection = sqlite3.connect(path)
+    # The dashboard reads while a research process writes: wait for locks instead of failing.
+    connection = sqlite3.connect(path, timeout=30, check_same_thread=False)
     connection.row_factory = sqlite3.Row
+    connection.execute("PRAGMA journal_mode = WAL")
     connection.execute("PRAGMA foreign_keys = ON")
     connection.executescript(SCHEMA)
     return connection

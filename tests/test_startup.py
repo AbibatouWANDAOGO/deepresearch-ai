@@ -35,11 +35,13 @@ def test_cli_fails_clearly_on_invalid_configuration():
     assert "ALLOW_PAID_APIS" in result.stderr
 
 
-def test_dashboard_renders(monkeypatch):
+def test_dashboard_renders(monkeypatch, tmp_path):
     for name in SETTING_VARIABLES:
         monkeypatch.delenv(name, raising=False)
+    monkeypatch.setenv("STORAGE_DIR", str(tmp_path))
+    monkeypatch.setenv("OLLAMA_BASE_URL", "http://127.0.0.1:9")
     app = AppTest.from_file(str(PROJECT_ROOT / "frontend" / "dashboard.py"), default_timeout=30)
     app.run()
     assert not app.exception
     assert app.title[0].value == "DeepResearch AI"
-    assert any("Configuration loaded" in s.value for s in app.success)
+    assert app.header[0].value == "New research"

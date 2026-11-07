@@ -4,7 +4,7 @@ An autonomous research agent. Given a question, it plans the research, searches 
 indexes them for retrieval-augmented generation (RAG), fact-checks the important claims and writes a structured report
 with traceable citations.
 
-**Status: phase 7 of 11 (cited reports).** A full research runs from the command line and produces a cited report in Markdown, PDF and JSON. The web interface comes in phase 8; see the [roadmap](#roadmap).
+**Status: phase 8 of 11 (dashboard).** Researches are started and followed from a Streamlit dashboard (or the command line) and produce a cited report in Markdown, PDF and JSON; see the [roadmap](#roadmap).
 
 ## Design principles
 
@@ -231,6 +231,34 @@ heat losses") to an unrelated verified claim. What the report also makes visible
 loosely related passages and accepting a figure ("75 % renewable energy") that no quoted passage states. Phase 9
 measures this.
 
+## Dashboard
+
+```bash
+streamlit run frontend/dashboard.py    # open http://localhost:8501
+```
+
+- **New research**: question, report language, depth and maximum number of sources. Depth sets how much work a
+  research may do: *quick* (2 sub-questions, no extra cycle, 15 minutes), *standard* (3 sub-questions, 1 extra cycle,
+  30 minutes) or *deep* (5 sub-questions, up to 3 extra cycles, 60 minutes). The sidebar tells whether Ollama and the
+  model are available before you start.
+- **Progress**: each workflow step shown as done, running or pending, with the latest events; the page refreshes every
+  3 seconds.
+- **History** of every research, including those started from the command line.
+- **Report** with verification indicators (verified, partially verified, disputed, unverified, sources cited),
+  status badges on every statement, and Markdown / PDF downloads.
+- **Claims**: each claim with its status, the justification and the exact passages (page or character offsets, quote)
+  that support or contradict it, filterable by status.
+- **Sources**: every URL tried, with title, type, access status, publication date, excerpt and the label it is cited
+  under.
+- **Log**: the event log, the stop reason and the output of the research process.
+
+A research takes minutes on a local model, so the dashboard does not run it in its own process:
+[app/jobs.py](app/jobs.py) starts `python -m app.jobs run <id>` in the background and the page reads the progress
+from the database and the LangGraph checkpoints. Closing the page does not stop the research. **Cancel** stops the
+process; the completed steps stay in the checkpoint, and **Resume** continues from there, as for a research whose
+process died (detected and marked *interrupted*). One research runs at a time: the embedded vector index accepts a
+single process, and the local model uses the whole CPU anyway. Text from the web is escaped before it is rendered.
+
 ## Roadmap
 
 | Phase | Content | Status |
@@ -242,7 +270,7 @@ measures this.
 | 5 | Agents: Planner, Researcher, Analyst, Fact Checker, Writer (Pydantic inputs/outputs) | done |
 | 6 | Orchestration with LangGraph: routing, iteration limits, checkpointing | done |
 | 7 | Citations and reports: claim traceability, Markdown and PDF export | done |
-| 8 | Streamlit dashboard: history, progress, sources | |
+| 8 | Streamlit dashboard: history, progress, sources | done |
 | 9 | Evaluation: 20+ questions, RAG quality, citation accuracy, coverage, latency, cost | |
 | 10 | Security: secrets, URL validation, SSRF protection, rate limits, prompt injection | |
 | 11 | Packaging: Docker, docker-compose, reproducible demo | |
@@ -277,9 +305,10 @@ app/
   reports/
     export.py        Markdown, HTML and PDF rendering, escaping of web text
     i18n.py          workflow reasons in the report language
+  jobs.py            research history, background runs, cancel and resume
   llm.py             Ollama and Anthropic clients with structured output and cost tracking
 frontend/
-  dashboard.py       Streamlit interface
+  dashboard.py       Streamlit dashboard: new research, progress, history, report, claims, sources
 storage/             local documents, vector index, database, reports (not committed)
-tests/               214 tests, no network, no credits and no model download
+tests/               233 tests, no network, no credits and no model download
 ```
