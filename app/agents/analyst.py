@@ -10,6 +10,7 @@ from app.agents.base import (
     format_passages,
     label_passages,
     language_name,
+    strip_passage_refs,
     valid_labels,
 )
 from app.agents.planner import SubQuestion
@@ -58,13 +59,18 @@ SYSTEM = (
     "You are the analysis agent of a research assistant. You answer a sub-question using only the "
     "passages provided. Every finding must cite the ids of the passages that support it. If the "
     "passages disagree, say so; if they do not answer part of the question, list it as a gap. Never "
-    "add facts that are not in the passages. " + UNTRUSTED_CONTENT_RULE
+    "add facts that are not in the passages. Write each statement as a standalone fact: put passage "
+    "ids only in passage_ids, never in the statement text. " + UNTRUSTED_CONTENT_RULE
 )
 
 
 def build_prompt(sub_question: SubQuestion, labeled: list[LabeledPassage], language: str) -> str:
     return (f"Sub-question: {sub_question.question}\n\nPassages:\n{format_passages(labeled)}\n\n"
             f"Write in {language_name(language)}. Give 2 to 6 findings, each citing passage ids.")
+
+
+def _clean_list(items: list[str]) -> list[str]:
+    return [text for text in (strip_passage_refs(x)[0] for x in items) if text]
 
 
 class Analyst:
@@ -84,10 +90,11 @@ class Analyst:
 
         claims, invalid = [], 0
         for finding in draft.findings:
-            text = " ".join(finding.statement.split())
+            text, mentioned = strip_passage_refs(finding.statement)
             if not text:
                 continue
-            labels = valid_labels(finding.passage_ids, labeled)
+            # ids written in the statement count as citations when the list itself is wrong
+            labels = valid_labels(finding.passage_ids, labeled) or valid_labels(mentioned, labeled)
             invalid += len({x.strip().strip("[]") for x in finding.passage_ids}) - len(labels)
             chunks = [by_label[label].chunk for label in labels]
             claims.append(Claim(
@@ -98,7 +105,7 @@ class Analyst:
                 source_ids=list(dict.fromkeys(c.source_id for c in chunks)),
             ))
         return SubQuestionAnalysis(sub_question_id=sub_question.id, question=sub_question.question,
-                                   summary=draft.summary.strip(), claims=claims,
-                                   disagreements=[d for d in draft.disagreements if d.strip()],
-                                   gaps=[g for g in draft.gaps if g.strip()],
+                                   summary=strip_passage_refs(draft.summary)[0], claims=claims,
+                                   disagreements=_clean_list(draft.disagreements),
+                                   gaps=_clean_list(draft.gaps),
                                    passages_used=len(passages), invalid_citations=invalid)

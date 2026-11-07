@@ -119,15 +119,12 @@ def build_runner(settings) -> ResearchRunner:
 
 
 def print_report(state: ResearchState) -> None:
-    report = state.get("report")
-    if not report:
-        return
-    print(f"\n# {report['title']}\n\n{report['executive_summary']}")
-    for section in report["sections"]:
-        print(f"\n## {section['heading']}\n{section['body']}")
-    if report["uncertainties"]:
-        print("\n## Uncertainties\n" + "\n".join(f"- {u}" for u in report["uncertainties"]))
-    print("\n## Sources\n" + "\n".join(f"[{b['label']}] {b['title']} - {b['url']}" for b in report["bibliography"]))
+    from app.agents.writer import Report
+    from app.reports.export import to_markdown
+
+    if state.get("report"):
+        print()
+        print(to_markdown(Report.model_validate(state["report"])))
 
 
 def main(argv: list[str] | None = None) -> int:

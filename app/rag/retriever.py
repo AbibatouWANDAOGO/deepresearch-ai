@@ -99,6 +99,10 @@ class HybridRetriever:
         self.chunks, self.sources, self.store = chunks, sources, store
         self.embedder, self.reranker, self.settings = embedder, reranker, settings
 
+    def chunk_map(self, research_id: str) -> dict[str, Chunk]:
+        """Every chunk of a research by id, to trace citations back to their passage."""
+        return {c.chunk_id: c for c in self.chunks.list(research_id)}
+
     def index(self, research_id: str) -> int:
         """Chunk, embed and store every usable source not indexed yet. Returns new chunks."""
         check_chunk_fits(self.settings.chunk_size_tokens, self.embedder)

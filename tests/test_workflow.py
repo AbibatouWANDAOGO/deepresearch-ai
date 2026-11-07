@@ -8,7 +8,7 @@ from app.agents.analyst import AnalysisDraft, Analyst, Finding
 from app.agents.fact_checker import FactChecker, Status, VerdictDraft
 from app.agents.planner import Planner, ResearchPlan, SubQuestion
 from app.agents.researcher import ResearcherOutput
-from app.agents.writer import ReportDraft, ReportSection, Writer
+from app.agents.writer import ReportDraft, SummarySentence, Writer
 from app.config import Settings
 from app.graph.nodes import Dependencies
 from app.graph.workflow import ResearchRunner
@@ -50,8 +50,8 @@ class RuleLLM:
             return VerdictDraft(status=status, contradicting_ids=[], justification="checked",
                                 supporting_ids=["P1"] if status != Status.UNVERIFIED else [])
         if name == "ReportDraft":
-            return ReportDraft(title="Report", executive_summary="Alpha and beta explained [S1].",
-                               sections=[ReportSection(heading="Findings", body="See [S1].")], limitations=[])
+            return ReportDraft(title="Report",
+                               summary=[SummarySentence(text="Alpha and beta explained.", claim_ids=["C1"])])
         raise AssertionError(name)
 
 
@@ -101,6 +101,9 @@ class FakeRetriever:
         topic = "alpha" if "alpha" in query else "beta"
         return [make_passage(sid, 0, f"{topic} evidence from {sid}")
                 for sid in self.collector.repository.sources if sid.startswith(topic)]
+
+    def chunk_map(self, research_id):
+        return {}
 
 
 def runner_with(llm, tmp_path, clock=None, **settings_overrides):
@@ -159,6 +162,7 @@ def test_research_stops_after_the_extra_cycle_limit(tmp_path):
     assert state["cycle"] == 2
     assert state["stop_reason"] == "research cycle limit reached (2 extra cycles)"
     assert state["report"]["uncertainties"]  # unverified claims are reported as such
+    assert all(not s["statements"] for s in state["report"]["sections"])
 
 
 def test_time_limit_skips_work_and_writes_what_it_has(tmp_path):
@@ -180,7 +184,7 @@ def test_claims_beyond_the_limit_are_marked_not_checked(tmp_path):
     assert q1[2]["justification"] == "not checked: claim limit per sub-question" and q1[2]["skipped"]
     assert llm.calls["VerdictDraft"] == 4
     assert state["cycle"] == 0  # skipped claims do not trigger another research cycle
-    assert "[UNVERIFIED] alpha fact 2" in state["report"]["uncertainties"]
+    assert "alpha fact 2" in [u["text"] for u in state["report"]["uncertainties"]]
 
 
 def test_claim_ids_stay_unique_across_cycles(tmp_path):
@@ -278,3 +282,14 @@ def test_resume_restarts_the_duration_limit(tmp_path):
     state = runner.resume("r1")
     assert state["started_at"] == 3600.0
     assert state["stop_reason"] != "time limit reached"
+
+
+def test_report_is_saved_as_json_markdown_and_pdf(tmp_path):
+    state = runner_with(RuleLLM(always(Status.VERIFIED)), tmp_path).start("Explain alpha and beta", research_id="r1")
+    folder = tmp_path / "reports" / "r1"
+    assert sorted(p.name for p in folder.iterdir()) == ["report.json", "report.md", "report.pdf"]
+    markdown = (folder / "report.md").read_text(encoding="utf-8")
+    assert "Alpha and beta explained [S1]." in markdown and "## Sources" in markdown
+    assert state["report"]["research_id"] == "r1"
+    assert state["report"]["stop_reason"] == "every sub-question is supported by evidence"
+    assert "saved as json, md, pdf" in state["events"][-1]["message"]

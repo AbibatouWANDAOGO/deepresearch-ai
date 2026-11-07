@@ -4,7 +4,7 @@ An autonomous research agent. Given a question, it plans the research, searches 
 indexes them for retrieval-augmented generation (RAG), fact-checks the important claims and writes a structured report
 with traceable citations.
 
-**Status: phase 6 of 11 (orchestration).** A full research runs from the command line; the report's citations are improved in phase 7. Full research is not available yet; see the [roadmap](#roadmap).
+**Status: phase 7 of 11 (cited reports).** A full research runs from the command line and produces a cited report in Markdown, PDF and JSON. The web interface comes in phase 8; see the [roadmap](#roadmap).
 
 ## Design principles
 
@@ -152,9 +152,9 @@ JSON schema of a Pydantic model is sent with the request and the answer is valid
 | --- | --- | --- | --- |
 | [Planner](app/agents/planner.py) | question, language | objective, sub-questions with search queries, quality criteria | count capped, ids renumbered, duplicate/empty queries removed, never empty |
 | [Researcher](app/agents/researcher.py) | sub-question | sources to collect, primary-source flags, follow-up queries | results merged and de-duplicated across queries, known URLs skipped, invented labels ignored (falls back to search ranking) |
-| [Analyst](app/agents/analyst.py) | sub-question, retrieved passages | summary, claims with cited chunks, disagreements, gaps | cited passage ids checked; invented ids dropped and counted; uncited claims kept for the fact checker |
+| [Analyst](app/agents/analyst.py) | sub-question, retrieved passages | summary, claims with cited chunks, disagreements, gaps | cited passage ids checked; invented ids dropped and counted; uncited claims kept for the fact checker; prompt ids ("passage P1") removed from the text |
 | [Fact Checker](app/agents/fact_checker.py) | claim, passages retrieved for it | `VERIFIED` / `PARTIALLY_VERIFIED` / `CONFLICTING` / `UNVERIFIED`, evidence, justification | a status is never stronger than its cited evidence (e.g. `VERIFIED` without a valid supporting passage becomes `UNVERIFIED`) |
-| [Writer](app/agents/writer.py) | checked claims with source labels | title, summary, sections, limitations, bibliography | citations to unknown sources removed; bibliography built from sources actually cited; every non-verified claim listed as an uncertainty |
+| [Writer](app/agents/writer.py) | checked claims with ids and statuses | title and summary sentences, each naming the claims it states | sections, citations, limitations and bibliography built by code; summary sentences that name no reportable claim, or add numbers or words not in it, are dropped (see below) |
 
 Web content reaches the models only inside `<document>` tags, with the rule that it is data and never instructions;
 attempts to close the tag from inside a page are neutralized. The Writer never sees web text, only checked claims.
@@ -197,6 +197,40 @@ one extra research cycle for the sub-question on limitations (two claims found `
 report was written, but the small model cited no source in its text and stated some unverified claims as facts:
 phase 7 builds cited statements in code from the checked claims instead of relying on the model.
 
+## Cited reports
+
+```bash
+python -m app.reports.export --research-id <research_id>   # re-render a saved report
+```
+
+At the end of a research the report is saved in `storage/reports/<research_id>/` as `report.json` (the full record),
+`report.md` and `report.pdf`. Traceability does not depend on the model:
+
+- **Statements are built by code** ([writer.py](app/agents/writer.py)) from the checked claims, one section per
+  sub-question. Each carries its citations (`[S1]`, numbered in order of first appearance) and the wording of its
+  status: a `PARTIALLY_VERIFIED` claim is introduced as partially supported, a `CONFLICTING` one as disputed with the
+  sources that contradict it. `UNVERIFIED` claims never appear in the body: they are listed apart, with the reason
+  (not supported, or not examined because of a limit).
+- **Every citation points to a passage**: source, chunk, page for PDFs or character offsets otherwise, and a short
+  quote (the sentence of the passage closest to the claim, kept on one page so the page number holds).
+- **The model writes only the title and the summary.** Each summary sentence must name the claims it states. Code
+  drops a sentence that names none of the reportable claims, contains a number that is not in them, or whose words
+  mostly come from neither the claims nor the question; it then adds the citations itself. If nothing is left, or the
+  call fails, the summary is built from the verified claims.
+- **Limitations are stated by code** from what the research knows about itself: why it stopped, how many claims could
+  not be verified or were not examined, parts without any verified claim, claims resting on a single source, and the
+  gaps found by the Analyst.
+- **Export**: Markdown and PDF are rendered from the same JSON ([export.py](app/reports/export.py)). The PDF is laid out
+  by PyMuPDF with embedded Unicode fonts, so no extra dependency. Text from the web is escaped in both formats: a page
+  cannot inject links, images or HTML into the report. Workflow reasons are shown in the report language.
+
+**Measured on the heat-pump research** (same checked claims as the phase 6 run, only the writing step redone, one
+model call of about a minute): 7 sources cited instead of 0, unverified claims kept out of the body, every statement
+linked to its passages. The summary check dropped one sentence that attached an unverified figure ("80 to 120 % of
+heat losses") to an unrelated verified claim. What the report also makes visible: the fact checker is lenient, citing
+loosely related passages and accepting a figure ("75 % renewable energy") that no quoted passage states. Phase 9
+measures this.
+
 ## Roadmap
 
 | Phase | Content | Status |
@@ -207,7 +241,7 @@ phase 7 builds cited statements in code from the checked claims instead of relyi
 | 4 | RAG: chunking, embeddings, Qdrant, BM25, hybrid fusion, reranking | done |
 | 5 | Agents: Planner, Researcher, Analyst, Fact Checker, Writer (Pydantic inputs/outputs) | done |
 | 6 | Orchestration with LangGraph: routing, iteration limits, checkpointing | done |
-| 7 | Citations and reports: claim traceability, Markdown and PDF export | |
+| 7 | Citations and reports: claim traceability, Markdown and PDF export | done |
 | 8 | Streamlit dashboard: history, progress, sources | |
 | 9 | Evaluation: 20+ questions, RAG quality, citation accuracy, coverage, latency, cost | |
 | 10 | Security: secrets, URL validation, SSRF protection, rate limits, prompt injection | |
@@ -240,9 +274,12 @@ app/
     routing.py       evidence sufficiency, cycle and time limits
     nodes.py         one node per step, with graceful degradation
     workflow.py      LangGraph graph, SQLite checkpoints, run / resume / stream
+  reports/
+    export.py        Markdown, HTML and PDF rendering, escaping of web text
+    i18n.py          workflow reasons in the report language
   llm.py             Ollama and Anthropic clients with structured output and cost tracking
 frontend/
   dashboard.py       Streamlit interface
 storage/             local documents, vector index, database, reports (not committed)
-tests/               192 tests, no network, no credits and no model download
+tests/               214 tests, no network, no credits and no model download
 ```

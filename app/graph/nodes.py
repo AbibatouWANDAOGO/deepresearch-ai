@@ -27,6 +27,7 @@ from app.graph.state import (
 )
 from app.llm import LLMError, recoverable
 from app.rag.retriever import HybridRetriever
+from app.reports.export import save_report
 from app.tools.document_parser import CollectTarget, DocumentCollector
 
 
@@ -172,13 +173,18 @@ class Nodes:
 
     def write(self, state: ResearchState) -> dict:
         _, reason = decide(state, self.d.settings, self.d.clock())
+        rid = state["research_id"]
         plan = get_plan(state)
         analyses = get_analyses(state)
         checked = get_checked(state)
         ordered: list[SubQuestionAnalysis] = [analyses[sq.id] for sq in plan.sub_questions if sq.id in analyses]
         all_checked = [c for sq in plan.sub_questions for c in checked.get(sq.id, [])]
-        sources = {s.source_id: s for s in self.d.collector.repository.list(state["research_id"])}
-        report = self.d.writer.run(state["question"], ordered, all_checked, sources, state["language"])
+        sources = {s.source_id: s for s in self.d.collector.repository.list(rid)}
+        report = self.d.writer.run(state["question"], plan.sub_questions, ordered, all_checked, sources,
+                                   self.d.retriever.chunk_map(rid), state["language"], stop_reason=reason)
+        report = report.model_copy(update={"research_id": rid})
+        files, error = save_report(report, self.d.settings.reports_dir / rid)
+        message = (f"report written ({reason}); {len(report.bibliography)} sources cited; "
+                   f"saved as {', '.join(files)}" + (f"; {error}" if error else ""))
         return {"report": report.model_dump(mode="json"), "stop_reason": reason,
-                "events": [event("write", f"report written ({reason}); "
-                                          f"{len(report.bibliography)} sources cited")]}
+                "events": [event("write", message)]}

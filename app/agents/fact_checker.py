@@ -49,6 +49,8 @@ class CheckedClaim(BaseModel):
     supporting_source_ids: list[str]
     justification: str
     adjusted: bool = False  # the model's status was downgraded by the rules above
+    # prompt label -> chunk id, so ids quoted in the justification ("P2") can become report labels
+    passage_map: dict[str, str] = {}
     skipped: bool = False  # not checked (claim or time limit): unverified, but not evidence of a gap
 
 
@@ -100,4 +102,5 @@ class FactChecker:
             supporting_source_ids=list(dict.fromkeys(chunk_of[x].source_id for x in supporting)),
             justification=draft.justification.strip(),
             adjusted=adjusted,
+            passage_map={label: chunk.chunk_id for label, chunk in chunk_of.items()},
         )
