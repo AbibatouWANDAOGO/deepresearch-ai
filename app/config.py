@@ -61,6 +61,12 @@ class Settings(BaseSettings):
     max_extra_research_cycles: int = Field(default=3, ge=0, le=3)
     max_sources_per_research: int = Field(default=20, ge=1, le=100)
     max_research_minutes: float = Field(default=30.0, gt=0)
+    # Each LLM call takes about a minute on a laptop CPU: these bound the length of a research.
+    max_sub_questions: int = Field(default=3, ge=1, le=8)
+    max_claims_per_sub_question: int = Field(default=3, ge=1, le=10)
+    passages_per_analysis: int = Field(default=5, ge=1, le=20)
+    # A sub-question is answered when at least this share of its checked claims is supported.
+    min_supported_ratio: float = Field(default=0.5, ge=0, le=1)
 
     # --- Downloads -----------------------------------------------------------------
     http_timeout_seconds: float = Field(default=20.0, gt=0)
@@ -136,6 +142,10 @@ class Settings(BaseSettings):
     @property
     def documents_db_path(self) -> Path:
         return self.storage_dir / "documents.db"
+
+    @property
+    def checkpoints_db_path(self) -> Path:
+        return self.storage_dir / "checkpoints.db"
 
     @property
     def search_dir(self) -> Path:

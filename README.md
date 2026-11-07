@@ -4,7 +4,7 @@ An autonomous research agent. Given a question, it plans the research, searches 
 indexes them for retrieval-augmented generation (RAG), fact-checks the important claims and writes a structured report
 with traceable citations.
 
-**Status: phase 5 of 11 (agents).** Full research is not available yet; see the [roadmap](#roadmap).
+**Status: phase 6 of 11 (orchestration).** A full research runs from the command line; the report's citations are improved in phase 7. Full research is not available yet; see the [roadmap](#roadmap).
 
 ## Design principles
 
@@ -44,7 +44,7 @@ All settings are environment variables, documented in [.env.example](.env.exampl
 | Language model | `LLM_PROVIDER` (`ollama` / `anthropic`; `openai` is reserved but not implemented yet), model names, API keys, timeout, Ollama context size, output length |
 | Cost guardrails | `ALLOW_PAID_APIS` (default `false`), `MAX_COST_USD_PER_RESEARCH`, Anthropic prices used for the estimate |
 | Web search | `SEARCH_PROVIDER` (`tavily` / `duckduckgo`), `SEARCH_FALLBACK`, `TAVILY_API_KEY`, monthly credit limit, results per query, retries |
-| Research limits | up to 3 extra research cycles, sources per research, maximum duration |
+| Research limits | up to 3 extra research cycles, sources per research, maximum duration, sub-questions, claims checked per sub-question, passages per analysis, supported-claim ratio |
 | Downloads | HTTP timeout, maximum download size, redirects, robots.txt, user agent |
 | Documents | maximum PDF pages, minimum and maximum characters per document |
 | RAG | chunk size 480 tokens with 72 overlap, multilingual embedding model, reranker, top-k, RRF constant, Qdrant collection |
@@ -163,6 +163,40 @@ Measured with `qwen2.5:3b` on a laptop CPU (Intel i7-1355U, no GPU): about 50 to
 plan, one analysis, three fact checks and a short report took 6 calls and 6.5 minutes, at no cost. A small local model
 tends to be lenient when judging evidence: the code guardrails stop unsupported verdicts, and phase 9 measures the rest.
 
+## Full research (LangGraph)
+
+```bash
+python -m app.graph.workflow "Quels sont les avantages et les limites des pompes à chaleur ?" --language fr
+python -m app.graph.workflow --resume <research_id>     # continue an interrupted research
+```
+
+```text
+plan -> research -> collect -> index -> analyze -> fact_check --(evidence sufficient, time or cycle limit)--> write
+                                                       |
+                                                       +--(a sub-question lacks support)--> next_cycle -> research ...
+```
+
+- **State** ([state.py](app/graph/state.py)): plain JSON only (plan, queries, analyses, checked claims, report and an
+  append-only event log), so checkpoints never depend on Python classes.
+- **Routing** ([routing.py](app/graph/routing.py)): a sub-question is answered when at least `MIN_SUPPORTED_RATIO` of
+  its checked claims are `VERIFIED` or `PARTIALLY_VERIFIED`. Otherwise only the unanswered sub-questions get another
+  cycle, using the complementary queries proposed by the Researcher, at most `MAX_EXTRA_RESEARCH_CYCLES` (3) times.
+- **Limits**: every node checks `MAX_RESEARCH_MINUTES` before each expensive call and, once it has passed, the run goes
+  straight to the report with what it has; `MAX_CLAIMS_PER_SUB_QUESTION` bounds fact checking. Claims skipped because
+  of a limit are reported as unverified but do not count as missing evidence.
+- **Graceful degradation**: a timed-out or invalid model answer does not stop the research. Source selection falls
+  back to the search engine's ranking, a failed analysis becomes a gap, a failed check an unchecked claim. A missing
+  model or an exhausted budget does stop it, and the research can be resumed afterwards.
+- **Checkpointing** ([workflow.py](app/graph/workflow.py)): LangGraph's SQLite checkpointer saves the state after every
+  node (`storage/checkpoints.db`, one thread per research id). `--resume` continues from the last completed step and
+  restarts the duration limit for the new session.
+
+**First full run, measured** (local `qwen2.5:3b`, laptop CPU, question on heat pumps in French): interrupted once by a
+model timeout, resumed from its checkpoint without redoing the plan; 12 sources collected, 83 chunks, 18 model calls,
+one extra research cycle for the sub-question on limitations (two claims found `CONFLICTING`), 34 minutes, $0. The
+report was written, but the small model cited no source in its text and stated some unverified claims as facts:
+phase 7 builds cited statements in code from the checked claims instead of relying on the model.
+
 ## Roadmap
 
 | Phase | Content | Status |
@@ -172,7 +206,7 @@ tends to be lenient when judging evidence: the code guardrails stop unsupported 
 | 3 | Document collection: web pages and PDFs, cleaning, deduplication, metadata | done |
 | 4 | RAG: chunking, embeddings, Qdrant, BM25, hybrid fusion, reranking | done |
 | 5 | Agents: Planner, Researcher, Analyst, Fact Checker, Writer (Pydantic inputs/outputs) | done |
-| 6 | Orchestration with LangGraph: routing, iteration limits, checkpointing | |
+| 6 | Orchestration with LangGraph: routing, iteration limits, checkpointing | done |
 | 7 | Citations and reports: claim traceability, Markdown and PDF export | |
 | 8 | Streamlit dashboard: history, progress, sources | |
 | 9 | Evaluation: 20+ questions, RAG quality, citation accuracy, coverage, latency, cost | |
@@ -201,9 +235,14 @@ app/
   agents/
     base.py          untrusted-content framing, passage labels, citation checks
     planner.py, researcher.py, analyst.py, fact_checker.py, writer.py
+  graph/
+    state.py         typed JSON state and event log
+    routing.py       evidence sufficiency, cycle and time limits
+    nodes.py         one node per step, with graceful degradation
+    workflow.py      LangGraph graph, SQLite checkpoints, run / resume / stream
   llm.py             Ollama and Anthropic clients with structured output and cost tracking
 frontend/
   dashboard.py       Streamlit interface
 storage/             local documents, vector index, database, reports (not committed)
-tests/               177 tests, no network, no credits and no model download
+tests/               192 tests, no network, no credits and no model download
 ```

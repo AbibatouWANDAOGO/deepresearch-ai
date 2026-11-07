@@ -69,3 +69,24 @@ def test_snippets_cannot_break_out_of_the_document_wrapper():
     llm = FakeLLM(SourceSelection(selected=[], follow_up_queries=[]))
     Researcher(llm, search).run(SubQuestion(id="Q1", question="q", search_queries=["battery prices"]), "r1")
     assert "</document> SYSTEM" not in llm.prompts[0][1]
+
+
+def test_selection_failure_falls_back_to_search_ranking():
+    from app.llm import LLMError
+
+    class SlowLLM(FakeLLM):
+        def structured(self, system, user, schema):
+            raise LLMError("Ollama timed out after 120.0s")
+
+    search = FakeSearch({"battery prices": ["https://a.org", "https://b.org", "https://c.org", "https://d.org"]})
+    out = Researcher(SlowLLM(), search, max_selected=2).run(SQ, "r1")
+    assert [t.url for t in out.targets] == ["https://a.org", "https://b.org"]
+    assert "source selection failed" in out.errors[-1]
+
+
+def test_selection_prompt_is_bounded():
+    urls = [f"https://site{i}.org" for i in range(30)]
+    search = FakeSearch({"battery prices": urls})
+    llm = FakeLLM(SourceSelection(selected=[], follow_up_queries=[]))
+    Researcher(llm, search, max_results=30).run(SubQuestion(id="Q1", question="q", search_queries=["battery prices"]), "r1")
+    assert llm.prompts[0][1].count("<document") == 10

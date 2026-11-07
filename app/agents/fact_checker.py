@@ -49,6 +49,7 @@ class CheckedClaim(BaseModel):
     supporting_source_ids: list[str]
     justification: str
     adjusted: bool = False  # the model's status was downgraded by the rules above
+    skipped: bool = False  # not checked (claim or time limit): unverified, but not evidence of a gap
 
 
 SYSTEM = (

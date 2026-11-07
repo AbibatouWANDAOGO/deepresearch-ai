@@ -11,3 +11,5 @@ torch>=2.4
 sentence-transformers>=3.0
 qdrant-client>=1.12
 anthropic>=2.0  # only used when LLM_PROVIDER=anthropic
+langgraph>=1.0,<2
+langgraph-checkpoint-sqlite>=3.0

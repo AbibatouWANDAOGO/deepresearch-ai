@@ -6,7 +6,7 @@ from pydantic import BaseModel, Field
 
 from app.agents.base import UNTRUSTED_CONTENT_RULE, escape_untrusted
 from app.agents.planner import SubQuestion
-from app.llm import LLMClient
+from app.llm import LLMClient, LLMError, recoverable
 from app.tools.document_parser import CollectTarget
 from app.tools.web_search import SearchError, SearchResult, WebSearch, normalize_url
 
@@ -39,10 +39,15 @@ SYSTEM = (
 )
 
 
+# Keep the selection prompt short: on a CPU, prompt length dominates the response time.
+MAX_CANDIDATES = 10
+SNIPPET_CHARS = 250
+
+
 def build_prompt(sub_question: SubQuestion, candidates: list[tuple[str, SearchResult]], max_selected: int) -> str:
     lines = [
         f'<document id="{label}" title="{escape_untrusted(r.title).replace(chr(34), chr(39))}" '
-        f'url="{r.url}">{escape_untrusted(r.snippet[:400])}</document>'
+        f'url="{r.url}">{escape_untrusted(r.snippet[:SNIPPET_CHARS])}</document>'
         for label, r in candidates
     ]
     return (f"Sub-question: {sub_question.question}\n\nSearch results:\n" + "\n".join(lines)
@@ -78,9 +83,17 @@ class Researcher:
         if not candidates:
             return output
 
-        labeled = [(f"R{i}", r) for i, r in enumerate(candidates, start=1)]
+        labeled = [(f"R{i}", r) for i, r in enumerate(candidates[:MAX_CANDIDATES], start=1)]
         by_label = dict(labeled)
-        selection = self.llm.structured(SYSTEM, build_prompt(sub_question, labeled, self.max_selected), SourceSelection)
+        try:
+            selection = self.llm.structured(SYSTEM, build_prompt(sub_question, labeled, self.max_selected),
+                                            SourceSelection)
+        except LLMError as exc:
+            if not recoverable(exc):
+                raise
+            # The search results are still good: keep the engine's ranking.
+            output.errors.append(f"source selection failed, using search ranking: {exc}")
+            selection = SourceSelection(selected=[], follow_up_queries=[])
 
         chosen: list[str] = []
         for item in selection.selected:

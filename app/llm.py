@@ -34,6 +34,12 @@ class BudgetExceededError(LLMError):
     """The per-research spending cap would be exceeded."""
 
 
+def recoverable(exc: Exception) -> bool:
+    """A failed call the research can work around (timeout, invalid answer), as opposed to
+    a missing model or an exhausted budget, which must stop the run."""
+    return isinstance(exc, LLMError) and not isinstance(exc, LLMConfigError | BudgetExceededError)
+
+
 class Usage(BaseModel):
     calls: int = 0
     input_tokens: int = 0
