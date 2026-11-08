@@ -5,7 +5,12 @@ status is never stronger than the cited evidence:
 
 - VERIFIED or PARTIALLY_VERIFIED needs at least one supporting passage;
 - CONFLICTING needs at least one contradicting passage;
-- VERIFIED with contradicting passages becomes CONFLICTING.
+- VERIFIED with contradicting passages becomes CONFLICTING;
+- a supporting passage that shares few of the claim's words, compared with the best one, is
+  not cited (the model tends to cite every passage on the topic). Skipped when no passage
+  shares many words, as when the claim and the passages are in different languages;
+- VERIFIED whose numbers (figures, years) are not in the cited passages becomes
+  PARTIALLY_VERIFIED.
 """
 
 from __future__ import annotations
@@ -23,8 +28,13 @@ from app.agents.base import (
     language_name,
     valid_labels,
 )
+from app.agents.evidence import missing_numbers, word_overlap
 from app.llm import LLMClient
 from app.rag.retriever import Passage
+
+# A supporting passage is kept when its word overlap with the claim reaches both values.
+MIN_SUPPORT_OVERLAP = 0.4
+RELATIVE_SUPPORT_OVERLAP = 0.6
 
 
 class Status(StrEnum):
@@ -81,6 +91,25 @@ def enforce_rules(draft: VerdictDraft, labeled: list[LabeledPassage]) -> tuple[S
     return status, supporting, contradicting, status != draft.status
 
 
+def keep_stating_passages(claim: str, supporting: list[str], text_of: dict[str, str]) -> list[str]:
+    """Supporting labels whose passage shares enough of the claim's words (see module doc)."""
+    overlaps = {label: word_overlap(claim, text_of[label]) for label in supporting}
+    best = max(overlaps.values(), default=0.0)
+    if best < MIN_SUPPORT_OVERLAP:
+        return supporting
+    floor = max(MIN_SUPPORT_OVERLAP, RELATIVE_SUPPORT_OVERLAP * best)
+    return [label for label in supporting if overlaps[label] >= floor]
+
+
+def check_evidence(claim: str, status: Status, supporting: list[str],
+                   text_of: dict[str, str]) -> tuple[Status, list[str]]:
+    """Text rules applied after the model's verdict: no model call."""
+    supporting = keep_stating_passages(claim, supporting, text_of)
+    if status == Status.VERIFIED and missing_numbers(claim, [text_of[x] for x in supporting]):
+        status = Status.PARTIALLY_VERIFIED
+    return status, supporting
+
+
 class FactChecker:
     def __init__(self, llm: LLMClient):
         self.llm = llm
@@ -94,6 +123,10 @@ class FactChecker:
         chunk_of = {item.label: item.passage.chunk for item in labeled}
         draft = self.llm.structured(SYSTEM, build_prompt(claim, labeled, language), VerdictDraft)
         status, supporting, contradicting, adjusted = enforce_rules(draft, labeled)
+        checked_status, supporting = check_evidence(
+            claim.text, status, supporting, {label: chunk.text for label, chunk in chunk_of.items()})
+        adjusted = adjusted or checked_status != status
+        status = checked_status
         return CheckedClaim(
             claim=claim,
             status=status,

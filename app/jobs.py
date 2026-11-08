@@ -23,7 +23,8 @@ import sqlite3
 import subprocess
 import sys
 import uuid
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
+from contextlib import contextmanager
 from datetime import UTC, datetime
 from enum import StrEnum
 from pathlib import Path
@@ -283,6 +284,30 @@ def read_state(settings: Settings, research_id: str) -> dict:
 
 # --- Job process -------------------------------------------------------------------------
 
+ES_CONTINUOUS, ES_SYSTEM_REQUIRED, ES_DISPLAY_REQUIRED = 0x80000000, 0x00000001, 0x00000002
+
+
+@contextmanager
+def keep_awake() -> Iterator[None]:
+    """Keep Windows from going to sleep on idle while a research runs.
+
+    A model call in progress when the machine sleeps resumes hours later and the run then
+    stops on its time limit with little done. Laptops with modern standby sleep when the
+    screen turns off, so the display is kept on too. Closing the lid still sleeps.
+    """
+    if sys.platform != "win32":
+        yield
+        return
+    import ctypes
+
+    kernel32 = ctypes.windll.kernel32
+    kernel32.SetThreadExecutionState(ES_CONTINUOUS | ES_SYSTEM_REQUIRED | ES_DISPLAY_REQUIRED)
+    try:
+        yield
+    finally:
+        kernel32.SetThreadExecutionState(ES_CONTINUOUS)
+
+
 
 def run_job(research_id: str, resume: bool = False, base: Settings | None = None, runner_factory=None) -> int:
     """Body of the background process: run the research and keep its record up to date."""
@@ -296,8 +321,13 @@ def run_job(research_id: str, resume: bool = False, base: Settings | None = None
         print(f"unknown research {research_id}", file=sys.stderr)
         return 2
     repo.update(research_id, status=ResearchStatus.RUNNING, pid=os.getpid(), error=None)
+    with keep_awake():
+        return _run(repo, research_id, record, resume, base, runner_factory or build_runner)
+
+
+def _run(repo, research_id, record, resume, base, runner_factory) -> int:
     try:
-        runner = (runner_factory or build_runner)(research_settings(base, record.params))
+        runner = runner_factory(research_settings(base, record.params))
         if resume:
             pending = runner.pending(research_id)
             if pending:

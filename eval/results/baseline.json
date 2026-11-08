@@ -1,0 +1,1055 @@
+{
+  "name": "baseline",
+  "params": {
+    "depth": "quick",
+    "max_sources": 12
+  },
+  "summary": {
+    "questions": 10,
+    "completed": 10,
+    "coverage_report": 0.32,
+    "coverage_research": 0.64,
+    "answered_sub_questions": 0.75,
+    "fetch_rate": 0.733,
+    "sources_cited": 3.2,
+    "claims_checked": 23,
+    "claims_supported": 23,
+    "origin_recall": 0.955,
+    "origin_mrr": 0.786,
+    "numbers_ok": 0.913,
+    "word_overlap": 0.849,
+    "independent": 0.478,
+    "passages_per_claim": 3.87,
+    "passage_precision": 0.652,
+    "citation_precision": 0.761,
+    "judged": 23,
+    "seconds_mean": 991.41,
+    "seconds_max": 1170.2,
+    "seconds_by_step": {
+      "analyze": 327.06,
+      "index": 140.39,
+      "plan": 37.73,
+      "fact_check": 271.72,
+      "write": 40.71,
+      "collect": 34.0,
+      "research": 110.84
+    },
+    "llm_calls": 82,
+    "input_tokens": 141139,
+    "output_tokens": 25306,
+    "cost_usd": 0.0,
+    "annotated": 23,
+    "citation_precision_annotated": 0.87,
+    "judge_agreement": 0.522,
+    "fact_checker_agreement": 0.522
+  },
+  "questions": [
+    {
+      "id": "battery-prices",
+      "research_id": "eval-baseline-battery-prices",
+      "language": "en",
+      "completed": true,
+      "stop_reason": "time limit reached",
+      "error": null,
+      "coverage": {
+        "report": 0.2,
+        "research": 0.8,
+        "missing": [
+          "economies of scale",
+          "energy density",
+          "raw material costs",
+          "size of the fall"
+        ]
+      },
+      "answered_sub_questions": 0.5,
+      "sources": {
+        "tried": 6,
+        "usable": 3,
+        "fetch_rate": 0.5,
+        "domains": 3,
+        "chunks": 61,
+        "cited": 1
+      },
+      "claims": {
+        "extracted": 12,
+        "checked": 1,
+        "skipped": 11,
+        "VERIFIED": 1,
+        "PARTIALLY_VERIFIED": 0,
+        "CONFLICTING": 0,
+        "UNVERIFIED": 0,
+        "supported": 1
+      },
+      "retrieval": {
+        "claims": 1,
+        "origin_recall": 1.0,
+        "origin_mrr": 1.0
+      },
+      "citations": {
+        "supported_claims": 1,
+        "numbers_ok": 0.0,
+        "word_overlap": 0.8,
+        "independent": 0.0,
+        "passage_precision": 1.0,
+        "judged": 1,
+        "precision": 1.0,
+        "details": [
+          {
+            "claim_id": "C1",
+            "text": "Silicon and lithium metal anodes, as well as new cathode materials, were key advancements in lithium-ion battery manufacturing between 2010 and 2020, as highlighted in.",
+            "status": "VERIFIED",
+            "numbers_ok": false,
+            "word_overlap": 0.8,
+            "independent": false,
+            "passages_cited": 4,
+            "passages_stating": 4,
+            "verdict": "SUPPORTED"
+          }
+        ]
+      },
+      "report": {
+        "summary_origin": "fallback",
+        "removed_summary_sentences": 0
+      },
+      "latency": {
+        "total_seconds": 1017.7,
+        "by_step": {
+          "analyze": 333.6,
+          "index": 281.9,
+          "plan": 57.3,
+          "fact_check": 117.9,
+          "write": 21.0,
+          "collect": 50.1,
+          "research": 118.7
+        }
+      },
+      "cost": {
+        "output_tokens": 1848,
+        "calls": 7,
+        "input_tokens": 10258,
+        "cost_usd": 0.0,
+        "seconds": 600.3569
+      }
+    },
+    {
+      "id": "heat-pump",
+      "research_id": "eval-baseline-heat-pump",
+      "language": "fr",
+      "completed": true,
+      "stop_reason": "time limit reached",
+      "error": null,
+      "coverage": {
+        "report": 0.2,
+        "research": 0.2,
+        "missing": [
+          "fluide frigorigène",
+          "compresseur",
+          "coefficient de performance",
+          "3 à 4 fois plus d'énergie restituée"
+        ]
+      },
+      "answered_sub_questions": 0.5,
+      "sources": {
+        "tried": 6,
+        "usable": 6,
+        "fetch_rate": 1.0,
+        "domains": 6,
+        "chunks": 26,
+        "cited": 5
+      },
+      "claims": {
+        "extracted": 12,
+        "checked": 1,
+        "skipped": 11,
+        "VERIFIED": 0,
+        "PARTIALLY_VERIFIED": 1,
+        "CONFLICTING": 0,
+        "UNVERIFIED": 0,
+        "supported": 1
+      },
+      "retrieval": {
+        "claims": 1,
+        "origin_recall": 1.0,
+        "origin_mrr": 0.25
+      },
+      "citations": {
+        "supported_claims": 1,
+        "numbers_ok": 1.0,
+        "word_overlap": 0.278,
+        "independent": 1.0,
+        "passage_precision": 0.0,
+        "judged": 1,
+        "precision": 0.5,
+        "details": [
+          {
+            "claim_id": "C1",
+            "text": "Une pompe à chaleur transfère l'énergie thermique de l'air extérieur vers l'intérieur de la maison, tandis qu'un radiateur électrique utilise de l'électricité pour créer de la chaleur directement dans la pièce où il est installé.",
+            "status": "PARTIALLY_VERIFIED",
+            "numbers_ok": true,
+            "word_overlap": 0.278,
+            "independent": true,
+            "passages_cited": 5,
+            "passages_stating": 0,
+            "verdict": "PARTIAL"
+          }
+        ]
+      },
+      "report": {
+        "summary_origin": "model",
+        "removed_summary_sentences": 3
+      },
+      "latency": {
+        "total_seconds": 989.6,
+        "by_step": {
+          "analyze": 286.1,
+          "index": 78.5,
+          "plan": 32.7,
+          "fact_check": 403.0,
+          "write": 54.0,
+          "collect": 18.9,
+          "research": 116.3
+        }
+      },
+      "cost": {
+        "output_tokens": 2464,
+        "calls": 7,
+        "input_tokens": 9999,
+        "cost_usd": 0.0,
+        "seconds": 539.5446
+      }
+    },
+    {
+      "id": "mrna-vaccines",
+      "research_id": "eval-baseline-mrna-vaccines-2",
+      "language": "en",
+      "completed": true,
+      "stop_reason": "every sub-question is supported by evidence",
+      "error": null,
+      "coverage": {
+        "report": 0.6,
+        "research": 0.8,
+        "missing": [
+          "lipid nanoparticles",
+          "immune response"
+        ]
+      },
+      "answered_sub_questions": 1.0,
+      "sources": {
+        "tried": 6,
+        "usable": 4,
+        "fetch_rate": 0.667,
+        "domains": 4,
+        "chunks": 10,
+        "cited": 4
+      },
+      "claims": {
+        "extracted": 12,
+        "checked": 4,
+        "skipped": 8,
+        "VERIFIED": 4,
+        "PARTIALLY_VERIFIED": 0,
+        "CONFLICTING": 0,
+        "UNVERIFIED": 0,
+        "supported": 4
+      },
+      "retrieval": {
+        "claims": 4,
+        "origin_recall": 1.0,
+        "origin_mrr": 1.0
+      },
+      "citations": {
+        "supported_claims": 4,
+        "numbers_ok": 1.0,
+        "word_overlap": 0.973,
+        "independent": 0.25,
+        "passage_precision": 0.632,
+        "judged": 4,
+        "precision": 0.75,
+        "details": [
+          {
+            "claim_id": "C1",
+            "text": "mRNA, or messenger ribonucleic acid, is a component of all life on earth and has been in cells for billions of years.",
+            "status": "VERIFIED",
+            "numbers_ok": true,
+            "word_overlap": 1.0,
+            "independent": false,
+            "passages_cited": 5,
+            "passages_stating": 2,
+            "verdict": "PARTIAL"
+          },
+          {
+            "claim_id": "C2",
+            "text": "mRNA's function in the human body is to provide a mechanism by which the instructions in our genes (DNA) can be used to make specific proteins in our cells.",
+            "status": "VERIFIED",
+            "numbers_ok": true,
+            "word_overlap": 0.941,
+            "independent": false,
+            "passages_cited": 5,
+            "passages_stating": 3,
+            "verdict": "PARTIAL"
+          },
+          {
+            "claim_id": "C7",
+            "text": "mRNA vaccines deliver genetic information to cells by providing instructions for making a specific protein, the SARS-CoV-2 spike protein, which is found on the surface of the virus that causes COVID-19.",
+            "status": "VERIFIED",
+            "numbers_ok": true,
+            "word_overlap": 0.95,
+            "independent": false,
+            "passages_cited": 5,
+            "passages_stating": 4,
+            "verdict": "SUPPORTED"
+          },
+          {
+            "claim_id": "C8",
+            "text": "The mRNA molecule is essentially a recipe, telling the cells of the body how to make the spike protein.",
+            "status": "VERIFIED",
+            "numbers_ok": true,
+            "word_overlap": 1.0,
+            "independent": true,
+            "passages_cited": 4,
+            "passages_stating": 3,
+            "verdict": "SUPPORTED"
+          }
+        ]
+      },
+      "report": {
+        "summary_origin": "model",
+        "removed_summary_sentences": 1
+      },
+      "latency": {
+        "total_seconds": 913.9,
+        "by_step": {
+          "fact_check": 335.4,
+          "write": 30.3,
+          "plan": 37.8,
+          "analyze": 313.1,
+          "collect": 8.2,
+          "index": 8.4,
+          "research": 109.1
+        }
+      },
+      "cost": {
+        "cost_usd": 0.0,
+        "input_tokens": 16791,
+        "seconds": 800.5919,
+        "output_tokens": 3352,
+        "calls": 10
+      }
+    },
+    {
+      "id": "sea-level",
+      "research_id": "eval-baseline-sea-level-2",
+      "language": "fr",
+      "completed": true,
+      "stop_reason": "time limit reached",
+      "error": null,
+      "coverage": {
+        "report": 0.2,
+        "research": 1.0,
+        "missing": [
+          "dilatation thermique",
+          "fonte des glaciers",
+          "calottes polaires",
+          "rythme de la hausse"
+        ]
+      },
+      "answered_sub_questions": 1.0,
+      "sources": {
+        "tried": 6,
+        "usable": 5,
+        "fetch_rate": 0.833,
+        "domains": 5,
+        "chunks": 25,
+        "cited": 3
+      },
+      "claims": {
+        "extracted": 12,
+        "checked": 3,
+        "skipped": 9,
+        "VERIFIED": 0,
+        "PARTIALLY_VERIFIED": 3,
+        "CONFLICTING": 0,
+        "UNVERIFIED": 0,
+        "supported": 3
+      },
+      "retrieval": {
+        "claims": 3,
+        "origin_recall": 1.0,
+        "origin_mrr": 1.0
+      },
+      "citations": {
+        "supported_claims": 3,
+        "numbers_ok": 0.667,
+        "word_overlap": 0.815,
+        "independent": 0.0,
+        "passage_precision": 0.667,
+        "judged": 3,
+        "precision": 0.833,
+        "details": [
+          {
+            "claim_id": "C1",
+            "text": "Le dioxyde de carbone (CO2) est la principale cause du réchauffement climatique, comme le souligne (passage 1) et (passage 1).",
+            "status": "PARTIALLY_VERIFIED",
+            "numbers_ok": false,
+            "word_overlap": 0.8,
+            "independent": false,
+            "passages_cited": 2,
+            "passages_stating": 2,
+            "verdict": "SUPPORTED"
+          },
+          {
+            "claim_id": "C2",
+            "text": "Le méthane est un gaz à effet de serre plus puissant que le CO2, mais sa durée de vie dans l'atmosphère est plus courte, ce qui est mentionné(passage 2).",
+            "status": "PARTIALLY_VERIFIED",
+            "numbers_ok": true,
+            "word_overlap": 0.846,
+            "independent": false,
+            "passages_cited": 3,
+            "passages_stating": 1,
+            "verdict": "PARTIAL"
+          },
+          {
+            "claim_id": "C7",
+            "text": "Le réchauffement climatique entraîne une élévation du niveau de la mer, ce qui est une conséquence directe du réchauffement climatique d'origine anthropique",
+            "status": "PARTIALLY_VERIFIED",
+            "numbers_ok": true,
+            "word_overlap": 0.8,
+            "independent": false,
+            "passages_cited": 4,
+            "passages_stating": 3,
+            "verdict": "SUPPORTED"
+          }
+        ]
+      },
+      "report": {
+        "summary_origin": "model",
+        "removed_summary_sentences": 1
+      },
+      "latency": {
+        "total_seconds": 968.4,
+        "by_step": {
+          "fact_check": 355.3,
+          "write": 46.7,
+          "plan": 35.4,
+          "analyze": 386.6,
+          "collect": 8.6,
+          "index": 18.5,
+          "research": 117.2
+        }
+      },
+      "cost": {
+        "cost_usd": 0.0,
+        "input_tokens": 19741,
+        "seconds": 904.5809,
+        "output_tokens": 3555,
+        "calls": 9
+      }
+    },
+    {
+      "id": "crispr",
+      "research_id": "eval-baseline-crispr",
+      "language": "en",
+      "completed": true,
+      "stop_reason": "every sub-question is supported by evidence",
+      "error": null,
+      "coverage": {
+        "report": 0.6,
+        "research": 0.6,
+        "missing": [
+          "DNA repair",
+          "bacterial origin"
+        ]
+      },
+      "answered_sub_questions": 1.0,
+      "sources": {
+        "tried": 6,
+        "usable": 2,
+        "fetch_rate": 0.333,
+        "domains": 2,
+        "chunks": 13,
+        "cited": 2
+      },
+      "claims": {
+        "extracted": 12,
+        "checked": 4,
+        "skipped": 8,
+        "VERIFIED": 3,
+        "PARTIALLY_VERIFIED": 1,
+        "CONFLICTING": 0,
+        "UNVERIFIED": 0,
+        "supported": 4
+      },
+      "retrieval": {
+        "claims": 4,
+        "origin_recall": 1.0,
+        "origin_mrr": 0.875
+      },
+      "citations": {
+        "supported_claims": 4,
+        "numbers_ok": 1.0,
+        "word_overlap": 0.897,
+        "independent": 0.25,
+        "passage_precision": 0.75,
+        "judged": 4,
+        "precision": 0.75,
+        "details": [
+          {
+            "claim_id": "C1",
+            "text": "CRISPR-Cas9 is a genome editing tool that uses Cas9 protein and guide RNA (gRNA) to cut DNA at a specific location.",
+            "status": "VERIFIED",
+            "numbers_ok": true,
+            "word_overlap": 0.714,
+            "independent": false,
+            "passages_cited": 2,
+            "passages_stating": 2,
+            "verdict": "SUPPORTED"
+          },
+          {
+            "claim_id": "C2",
+            "text": "The Cas9 protein contains RuvC1 and HNH-like nuclease domains, which cleave the double-stranded DNA at the 3rd base upstream of the PAM motif.",
+            "status": "PARTIALLY_VERIFIED",
+            "numbers_ok": true,
+            "word_overlap": 1.0,
+            "independent": false,
+            "passages_cited": 2,
+            "passages_stating": 2,
+            "verdict": "PARTIAL"
+          },
+          {
+            "claim_id": "C7",
+            "text": "CRISPR-Cas9 is used in gene therapy and gene breeding.",
+            "status": "VERIFIED",
+            "numbers_ok": true,
+            "word_overlap": 1.0,
+            "independent": true,
+            "passages_cited": 5,
+            "passages_stating": 4,
+            "verdict": "SUPPORTED"
+          },
+          {
+            "claim_id": "C8",
+            "text": "CRISPR-Cas9 can be used to edit somatic and germline cells.",
+            "status": "VERIFIED",
+            "numbers_ok": true,
+            "word_overlap": 0.875,
+            "independent": false,
+            "passages_cited": 3,
+            "passages_stating": 1,
+            "verdict": "PARTIAL"
+          }
+        ]
+      },
+      "report": {
+        "summary_origin": "model",
+        "removed_summary_sentences": 1
+      },
+      "latency": {
+        "total_seconds": 701.1,
+        "by_step": {
+          "fact_check": 313.8,
+          "write": 30.2,
+          "plan": 24.1,
+          "analyze": 215.5,
+          "collect": 3.3,
+          "index": 5.7,
+          "research": 108.5
+        }
+      },
+      "cost": {
+        "cost_usd": 0.0,
+        "input_tokens": 17564,
+        "seconds": 663.3068,
+        "output_tokens": 2748,
+        "calls": 10
+      }
+    },
+    {
+      "id": "nuclear-power",
+      "research_id": "eval-baseline-nuclear-power-2",
+      "language": "fr",
+      "completed": true,
+      "stop_reason": "time limit reached",
+      "error": null,
+      "coverage": {
+        "report": 0.6,
+        "research": 1.0,
+        "missing": [
+          "coût et délais",
+          "production pilotable"
+        ]
+      },
+      "answered_sub_questions": 1.0,
+      "sources": {
+        "tried": 6,
+        "usable": 6,
+        "fetch_rate": 1.0,
+        "domains": 5,
+        "chunks": 29,
+        "cited": 5
+      },
+      "claims": {
+        "extracted": 8,
+        "checked": 3,
+        "skipped": 5,
+        "VERIFIED": 1,
+        "PARTIALLY_VERIFIED": 0,
+        "CONFLICTING": 2,
+        "UNVERIFIED": 0,
+        "supported": 3
+      },
+      "retrieval": {
+        "claims": 3,
+        "origin_recall": 0.667,
+        "origin_mrr": 0.278
+      },
+      "citations": {
+        "supported_claims": 3,
+        "numbers_ok": 1.0,
+        "word_overlap": 0.721,
+        "independent": 1.0,
+        "passage_precision": 0.444,
+        "judged": 3,
+        "precision": 0.5,
+        "details": [
+          {
+            "claim_id": "C1",
+            "text": "La sécurité élevée est un des principaux avantages de l'énergie nucléaire, comme le souligne, qui mentionne que les normes de sécurité du nucléaire sont particulièrement élevées et que l'industrie est bien encadrée par des organismes régulateurs. De plus, les accidents sur les installations actuelles sont très improbables, mais les dommages potentiels pourraient être importants.",
+            "status": "VERIFIED",
+            "numbers_ok": true,
+            "word_overlap": 0.704,
+            "independent": true,
+            "passages_cited": 5,
+            "passages_stating": 2,
+            "verdict": "PARTIAL"
+          },
+          {
+            "claim_id": "C2",
+            "text": "L'énergie nucléaire permet de produire de l'électricité indépendamment des conditions météorologiques, comme le mentionne. Il est indiqué que l'énergie nucléaire permet de produire massivement de l'électricité décarbonée sans dépendre des conditions climatiques.",
+            "status": "CONFLICTING",
+            "numbers_ok": true,
+            "word_overlap": 0.812,
+            "independent": true,
+            "passages_cited": 2,
+            "passages_stating": 1,
+            "verdict": "PARTIAL"
+          },
+          {
+            "claim_id": "C7",
+            "text": "Un des principaux inconvénients de l'énergie nucléaire est la production de déchets radioactifs qui restent à long terme dans la Terre, ce qui pose des défis de transmission des connaissances aux générations futures.",
+            "status": "CONFLICTING",
+            "numbers_ok": true,
+            "word_overlap": 0.647,
+            "independent": true,
+            "passages_cited": 2,
+            "passages_stating": 1,
+            "verdict": "PARTIAL"
+          }
+        ]
+      },
+      "report": {
+        "summary_origin": "model",
+        "removed_summary_sentences": 0
+      },
+      "latency": {
+        "total_seconds": 1170.2,
+        "by_step": {
+          "index": 102.8,
+          "collect": 11.6,
+          "write": 45.9,
+          "plan": 51.0,
+          "analyze": 311.7,
+          "research": 104.9,
+          "fact_check": 362.1
+        }
+      },
+      "cost": {
+        "output_tokens": 2749,
+        "input_tokens": 17200,
+        "calls": 9,
+        "seconds": 771.4935,
+        "cost_usd": 0.0
+      }
+    },
+    {
+      "id": "transformer",
+      "research_id": "eval-baseline-transformer-2",
+      "language": "en",
+      "completed": true,
+      "stop_reason": "time limit reached",
+      "error": null,
+      "coverage": {
+        "report": 0.6,
+        "research": 0.8,
+        "missing": [
+          "2017 paper",
+          "parallel processing"
+        ]
+      },
+      "answered_sub_questions": 1.0,
+      "sources": {
+        "tried": 6,
+        "usable": 3,
+        "fetch_rate": 0.5,
+        "domains": 3,
+        "chunks": 29,
+        "cited": 3
+      },
+      "claims": {
+        "extracted": 12,
+        "checked": 3,
+        "skipped": 9,
+        "VERIFIED": 3,
+        "PARTIALLY_VERIFIED": 0,
+        "CONFLICTING": 0,
+        "UNVERIFIED": 0,
+        "supported": 3
+      },
+      "retrieval": {
+        "claims": 3,
+        "origin_recall": 1.0,
+        "origin_mrr": 1.0
+      },
+      "citations": {
+        "supported_claims": 3,
+        "numbers_ok": 1.0,
+        "word_overlap": 0.916,
+        "independent": 0.333,
+        "passage_precision": 0.909,
+        "judged": 3,
+        "precision": 0.667,
+        "details": [
+          {
+            "claim_id": "C1",
+            "text": "The core components of a transformer model include the encoder, decoder, self-attention mechanism, positional encoding, and multihead attention.",
+            "status": "VERIFIED",
+            "numbers_ok": true,
+            "word_overlap": 0.923,
+            "independent": true,
+            "passages_cited": 5,
+            "passages_stating": 4,
+            "verdict": "PARTIAL"
+          },
+          {
+            "claim_id": "C2",
+            "text": "The encoder reads and processes the input text, transforming it into a format that the model can understand.",
+            "status": "VERIFIED",
+            "numbers_ok": true,
+            "word_overlap": 1.0,
+            "independent": false,
+            "passages_cited": 3,
+            "passages_stating": 3,
+            "verdict": "PARTIAL"
+          },
+          {
+            "claim_id": "C7",
+            "text": "The self-attention mechanism in transformers works by generating Q (Query), K (Key), and V (Value) vectors to weigh the importance of different tokens within the sequence, focusing on relevant parts of the input when making predictions.",
+            "status": "VERIFIED",
+            "numbers_ok": true,
+            "word_overlap": 0.826,
+            "independent": false,
+            "passages_cited": 3,
+            "passages_stating": 3,
+            "verdict": "SUPPORTED"
+          }
+        ]
+      },
+      "report": {
+        "summary_origin": "model",
+        "removed_summary_sentences": 2
+      },
+      "latency": {
+        "total_seconds": 997.0,
+        "by_step": {
+          "index": 101.7,
+          "collect": 153.2,
+          "write": 41.1,
+          "plan": 27.8,
+          "analyze": 279.8,
+          "research": 95.8,
+          "fact_check": 297.3
+        }
+      },
+      "cost": {
+        "output_tokens": 2404,
+        "input_tokens": 14293,
+        "calls": 9,
+        "seconds": 620.4228,
+        "cost_usd": 0.0
+      }
+    },
+    {
+      "id": "gdpr",
+      "research_id": "eval-baseline-gdpr-2",
+      "language": "fr",
+      "completed": true,
+      "stop_reason": "time limit reached",
+      "error": null,
+      "coverage": {
+        "report": 0.0,
+        "research": 0.6,
+        "missing": [
+          "consentement et base légale",
+          "délégué à la protection des données",
+          "notification des violations",
+          "droits des personnes",
+          "sanctions"
+        ]
+      },
+      "answered_sub_questions": 0.5,
+      "sources": {
+        "tried": 6,
+        "usable": 6,
+        "fetch_rate": 1.0,
+        "domains": 5,
+        "chunks": 67,
+        "cited": 3
+      },
+      "claims": {
+        "extracted": 6,
+        "checked": 1,
+        "skipped": 5,
+        "VERIFIED": 1,
+        "PARTIALLY_VERIFIED": 0,
+        "CONFLICTING": 0,
+        "UNVERIFIED": 0,
+        "supported": 1
+      },
+      "retrieval": {
+        "claims": 1,
+        "origin_recall": 1.0,
+        "origin_mrr": 1.0
+      },
+      "citations": {
+        "supported_claims": 1,
+        "numbers_ok": 1.0,
+        "word_overlap": 1.0,
+        "independent": 1.0,
+        "passage_precision": 1.0,
+        "judged": 1,
+        "precision": 1.0,
+        "details": [
+          {
+            "claim_id": "C1",
+            "text": "Le RGPD impose des obligations aux entreprises réalisant des traitements de données personnelles",
+            "status": "VERIFIED",
+            "numbers_ok": true,
+            "word_overlap": 1.0,
+            "independent": true,
+            "passages_cited": 5,
+            "passages_stating": 5,
+            "verdict": "SUPPORTED"
+          }
+        ]
+      },
+      "report": {
+        "summary_origin": "model",
+        "removed_summary_sentences": 4
+      },
+      "latency": {
+        "total_seconds": 1019.4,
+        "by_step": {
+          "index": 236.4,
+          "collect": 23.2,
+          "write": 37.3,
+          "plan": 29.6,
+          "analyze": 461.9,
+          "research": 114.6,
+          "fact_check": 116.4
+        }
+      },
+      "cost": {
+        "output_tokens": 1485,
+        "input_tokens": 8917,
+        "calls": 6,
+        "seconds": 381.3099,
+        "cost_usd": 0.0
+      }
+    },
+    {
+      "id": "svb-collapse",
+      "research_id": "eval-baseline-svb-collapse-2",
+      "language": "en",
+      "completed": true,
+      "stop_reason": "time limit reached",
+      "error": null,
+      "coverage": {
+        "report": 0.0,
+        "research": 0.4,
+        "missing": [
+          "rising interest rates",
+          "losses on bonds",
+          "bank run",
+          "uninsured deposits",
+          "concentrated tech clientele"
+        ]
+      },
+      "answered_sub_questions": 0.5,
+      "sources": {
+        "tried": 6,
+        "usable": 5,
+        "fetch_rate": 0.833,
+        "domains": 4,
+        "chunks": 194,
+        "cited": 4
+      },
+      "claims": {
+        "extracted": 12,
+        "checked": 1,
+        "skipped": 11,
+        "VERIFIED": 1,
+        "PARTIALLY_VERIFIED": 0,
+        "CONFLICTING": 0,
+        "UNVERIFIED": 0,
+        "supported": 1
+      },
+      "retrieval": {
+        "claims": 0,
+        "origin_recall": null,
+        "origin_mrr": null
+      },
+      "citations": {
+        "supported_claims": 1,
+        "numbers_ok": 1.0,
+        "word_overlap": 1.0,
+        "independent": 1.0,
+        "passage_precision": 1.0,
+        "judged": 1,
+        "precision": 1.0,
+        "details": [
+          {
+            "claim_id": "C1",
+            "text": "Prior to its failure, Silicon Valley Bank (SVB) was a California state-chartered bank with approximately $209 billion in assets.",
+            "status": "VERIFIED",
+            "numbers_ok": true,
+            "word_overlap": 1.0,
+            "independent": true,
+            "passages_cited": 5,
+            "passages_stating": 5,
+            "verdict": "SUPPORTED"
+          }
+        ]
+      },
+      "report": {
+        "summary_origin": "model",
+        "removed_summary_sentences": 2
+      },
+      "latency": {
+        "total_seconds": 1061.7,
+        "by_step": {
+          "index": 411.3,
+          "collect": 17.2,
+          "write": 43.1,
+          "plan": 28.3,
+          "analyze": 303.4,
+          "research": 108.4,
+          "fact_check": 150.0
+        }
+      },
+      "cost": {
+        "output_tokens": 1962,
+        "input_tokens": 11053,
+        "calls": 7,
+        "seconds": 586.4818,
+        "cost_usd": 0.0
+      }
+    },
+    {
+      "id": "inflation-france-2022",
+      "research_id": "eval-baseline-inflation-france-2022",
+      "language": "fr",
+      "completed": true,
+      "stop_reason": "time limit reached",
+      "error": null,
+      "coverage": {
+        "report": 0.2,
+        "research": 0.2,
+        "missing": [
+          "guerre en Ukraine",
+          "prix alimentaires",
+          "reprise après la pandémie",
+          "niveau de l'inflation"
+        ]
+      },
+      "answered_sub_questions": 0.5,
+      "sources": {
+        "tried": 6,
+        "usable": 4,
+        "fetch_rate": 0.667,
+        "domains": 4,
+        "chunks": 52,
+        "cited": 2
+      },
+      "claims": {
+        "extracted": 12,
+        "checked": 2,
+        "skipped": 10,
+        "VERIFIED": 0,
+        "PARTIALLY_VERIFIED": 2,
+        "CONFLICTING": 0,
+        "UNVERIFIED": 0,
+        "supported": 2
+      },
+      "retrieval": {
+        "claims": 2,
+        "origin_recall": 1.0,
+        "origin_mrr": 0.667
+      },
+      "citations": {
+        "supported_claims": 2,
+        "numbers_ok": 1.0,
+        "word_overlap": 0.801,
+        "independent": 1.0,
+        "passage_precision": 0.3,
+        "judged": 2,
+        "precision": 1.0,
+        "details": [
+          {
+            "claim_id": "C1",
+            "text": "La hausse des coûts de production est une cause principale de l'inflation en France en 2022, ce qui est soutenu par.",
+            "status": "PARTIALLY_VERIFIED",
+            "numbers_ok": true,
+            "word_overlap": 0.875,
+            "independent": true,
+            "passages_cited": 5,
+            "passages_stating": 2,
+            "verdict": "SUPPORTED"
+          },
+          {
+            "claim_id": "C2",
+            "text": "Les fluctuations des prix de l'énergie ont également joué un rôle crucial dans l'inflation en France en 2022, ce qui est soutenu par.",
+            "status": "PARTIALLY_VERIFIED",
+            "numbers_ok": true,
+            "word_overlap": 0.727,
+            "independent": true,
+            "passages_cited": 5,
+            "passages_stating": 1,
+            "verdict": "SUPPORTED"
+          }
+        ]
+      },
+      "report": {
+        "summary_origin": "model",
+        "removed_summary_sentences": 4
+      },
+      "latency": {
+        "total_seconds": 1075.1,
+        "by_step": {
+          "fact_check": 266.0,
+          "write": 57.5,
+          "plan": 53.3,
+          "analyze": 378.9,
+          "collect": 45.7,
+          "index": 158.7,
+          "research": 114.9
+        }
+      },
+      "cost": {
+        "cost_usd": 0.0,
+        "input_tokens": 15323,
+        "seconds": 756.7333,
+        "output_tokens": 2739,
+        "calls": 8
+      }
+    }
+  ]
+}

@@ -1,0 +1,57 @@
+{
+  "_about": "Manual verdicts on the claims the Fact Checker supported, read against the cited passages with the judge's rubric (SUPPORTED: every part stated; PARTIAL: part stated, or a figure, date or scope changed; NOT_SUPPORTED: not stated). Annotated by the AI assistant that built the project (Claude), not by an independent human reviewer.",
+  "eval-baseline-battery-prices": {
+    "C1": "PARTIAL"
+  },
+  "eval-baseline-heat-pump": {
+    "C1": "PARTIAL"
+  },
+  "eval-baseline-mrna-vaccines-2": {
+    "C1": "SUPPORTED",
+    "C2": "SUPPORTED",
+    "C7": "SUPPORTED",
+    "C8": "SUPPORTED"
+  },
+  "eval-baseline-sea-level-2": {
+    "C1": "SUPPORTED",
+    "C2": "SUPPORTED",
+    "C7": "SUPPORTED"
+  },
+  "eval-baseline-crispr": {
+    "C1": "SUPPORTED",
+    "C2": "SUPPORTED",
+    "C7": "PARTIAL",
+    "C8": "PARTIAL"
+  },
+  "eval-baseline-inflation-france-2022": {
+    "C1": "PARTIAL",
+    "C2": "SUPPORTED"
+  },
+  "eval-baseline-nuclear-power-2": {
+    "C1": "PARTIAL",
+    "C2": "SUPPORTED",
+    "C7": "SUPPORTED"
+  },
+  "eval-baseline-transformer-2": {
+    "C1": "SUPPORTED",
+    "C2": "SUPPORTED",
+    "C7": "SUPPORTED"
+  },
+  "eval-baseline-gdpr-2": {
+    "C1": "SUPPORTED"
+  },
+  "eval-baseline-svb-collapse-2": {
+    "C1": "SUPPORTED"
+  },
+  "_notes": {
+    "eval-baseline-battery-prices C1": "The passages present silicon / lithium-metal anodes and new cathodes as next-generation technologies expected to cut costs; the claim turns them into advancements made between 2010 and 2020.",
+    "eval-baseline-heat-pump C1": "Heat transfer from outdoor air is stated; 'directly in the room where it is installed' is not.",
+    "eval-baseline-crispr C7": "The passage speaks of 'great application prospects' in gene therapy and breeding, not of current use.",
+    "eval-baseline-crispr C8": "The passage says applications concern somatic cells and germline editing is debated and illegal in most countries; 'can be used to edit germline cells' overstates it.",
+    "eval-baseline-inflation-france-2022 C1": "Production costs are given as a main cause of inflation in France in general; 2022 is not stated in that passage.",
+    "eval-baseline-sea-level-2 C1": "Stated verbatim, but off-topic for the sea-level question.",
+    "general": "Correct claims are often cited with 3 to 5 passages of which only one or two state them: the Fact Checker over-cites. Several claims end with dangling text ('as highlighted in.', 'ce qui est soutenu par.') left by passage references.",
+    "eval-baseline-nuclear-power-2 C1": "High safety standards and unlikely accidents are stated, but under 'issues' (enjeux), not as one of the main advantages; the Swiss passage's 'sécurité d'approvisionnement' is security of supply, not safety.",
+    "eval-baseline-nuclear-power-2 C2/C7": "Both stated by the cited passages; rated CONFLICTING by the Fact Checker although no passage contradicts them."
+  }
+}

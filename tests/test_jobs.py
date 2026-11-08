@@ -218,3 +218,10 @@ def test_reports_from_the_command_line_join_the_history(settings):
     assert record.status == ResearchStatus.COMPLETED and record.language == "fr"
     assert record.stop_reason == "time limit reached"
     assert record.created_at == record.finished_at  # start unknown: no negative duration
+
+
+def test_keep_awake_is_a_context_manager():
+    from app.jobs import keep_awake
+
+    with keep_awake():
+        pass  # on Windows: asks the system not to sleep, then gives the request back

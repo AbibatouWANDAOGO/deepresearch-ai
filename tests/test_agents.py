@@ -1,3 +1,5 @@
+import pytest
+
 """Analyst and Writer."""
 
 from app.agents.analyst import AnalysisDraft, Analyst, Claim, Finding, SubQuestionAnalysis
@@ -55,6 +57,24 @@ def test_passage_references_seen_in_a_real_run_are_cleaned():
     assert strip_passage_refs(text) == ("Les pompes à chaleur sont limitées par temps très froid.", ["P1"])
     assert strip_passage_refs("Le COP vaut 3 [P2] (P3, P4).") == ("Le COP vaut 3.", ["P2", "P3", "P4"])
     assert strip_passage_refs("PAC model P10X is quiet.")[0] == "PAC model P10X is quiet."
+
+
+@pytest.mark.parametrize(("text", "expected"), [
+    # the phrase that introduces a reference goes with it (texts seen in the evaluation)
+    ("Silicon anodes cut costs, as highlighted in P1.", ("Silicon anodes cut costs.", ["P1"])),
+    ("Le CO2 est la principale cause, comme le souligne (passage 1) et (passage 2).",
+     ("Le CO2 est la principale cause.", ["P1", "P2"])),
+    ("Les émissions augmentent, comme (passage 4) le décrit.", ("Les émissions augmentent.", ["P4"])),
+    ("Les coûts ont augmenté en 2022, ce qui est soutenu par P1 et P2.", ("Les coûts ont augmenté en 2022.", ["P1", "P2"])),
+    # left dangling by an older cleaning
+    ("Silicon anodes cut costs, as described in.", ("Silicon anodes cut costs.", [])),
+    ("Le nucléaire est stable, comme le mentionne. Il est indiqué que la production est contrôlée.", ("Le nucléaire est stable. Il est indiqué que la production est contrôlée.", [])),
+    # untouched
+    ("mRNA vaccines teach cells, as described in the IPCC report.", ("mRNA vaccines teach cells, as described in the IPCC report.", [])),
+    ("Article 3 applies to documents 2 years old.", ("Article 3 applies to documents 2 years old.", [])),
+])
+def test_reference_lead_ins_are_removed(text, expected):
+    assert strip_passage_refs(text) == expected
 
 
 # --- Writer ------------------------------------------------------------------------------

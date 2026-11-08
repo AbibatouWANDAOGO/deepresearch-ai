@@ -153,7 +153,7 @@ JSON schema of a Pydantic model is sent with the request and the answer is valid
 | [Planner](app/agents/planner.py) | question, language | objective, sub-questions with search queries, quality criteria | count capped, ids renumbered, duplicate/empty queries removed, never empty |
 | [Researcher](app/agents/researcher.py) | sub-question | sources to collect, primary-source flags, follow-up queries | results merged and de-duplicated across queries, known URLs skipped, invented labels ignored (falls back to search ranking) |
 | [Analyst](app/agents/analyst.py) | sub-question, retrieved passages | summary, claims with cited chunks, disagreements, gaps | cited passage ids checked; invented ids dropped and counted; uncited claims kept for the fact checker; prompt ids ("passage P1") removed from the text |
-| [Fact Checker](app/agents/fact_checker.py) | claim, passages retrieved for it | `VERIFIED` / `PARTIALLY_VERIFIED` / `CONFLICTING` / `UNVERIFIED`, evidence, justification | a status is never stronger than its cited evidence (e.g. `VERIFIED` without a valid supporting passage becomes `UNVERIFIED`) |
+| [Fact Checker](app/agents/fact_checker.py) | claim, passages retrieved for it | `VERIFIED` / `PARTIALLY_VERIFIED` / `CONFLICTING` / `UNVERIFIED`, evidence, justification | a status is never stronger than its cited evidence (e.g. `VERIFIED` without a valid supporting passage becomes `UNVERIFIED`, or `PARTIALLY_VERIFIED` when a number of the claim is in no cited passage); passages sharing few of the claim's words are not cited |
 | [Writer](app/agents/writer.py) | checked claims with ids and statuses | title and summary sentences, each naming the claims it states | sections, citations, limitations and bibliography built by code; summary sentences that name no reportable claim, or add numbers or words not in it, are dropped (see below) |
 
 Web content reaches the models only inside `<document>` tags, with the rule that it is data and never instructions;
@@ -161,7 +161,8 @@ attempts to close the tag from inside a page are neutralized. The Writer never s
 
 Measured with `qwen2.5:3b` on a laptop CPU (Intel i7-1355U, no GPU): about 50 to 95 seconds per agent call; one
 plan, one analysis, three fact checks and a short report took 6 calls and 6.5 minutes, at no cost. A small local model
-tends to be lenient when judging evidence: the code guardrails stop unsupported verdicts, and phase 9 measures the rest.
+makes evidence mistakes both ways: the code guardrails stop unsupported verdicts, and the [evaluation](#evaluation)
+measures the rest.
 
 ## Full research (LangGraph)
 
@@ -228,8 +229,8 @@ At the end of a research the report is saved in `storage/reports/<research_id>/`
 model call of about a minute): 7 sources cited instead of 0, unverified claims kept out of the body, every statement
 linked to its passages. The summary check dropped one sentence that attached an unverified figure ("80 to 120 % of
 heat losses") to an unrelated verified claim. What the report also makes visible: the fact checker is lenient, citing
-loosely related passages and accepting a figure ("75 % renewable energy") that no quoted passage states. Phase 9
-measures this.
+loosely related passages and accepting a figure ("75 % renewable energy") that no quoted passage states. The
+[evaluation](#evaluation) measures this.
 
 ## Dashboard
 
@@ -259,6 +260,67 @@ process; the completed steps stay in the checkpoint, and **Resume** continues fr
 process died (detected and marked *interrupted*). One research runs at a time: the embedded vector index accepts a
 single process, and the local model uses the whole CPU anyway. Text from the web is escaped before it is rendered.
 
+## Evaluation
+
+```bash
+python -m app.evaluation.run run   --name baseline --depth quick --max-sources 12   # 10 researches, ~3 hours on a CPU
+python -m app.evaluation.run score --name baseline [--judge] [--replay-rules]
+```
+
+[eval/questions.json](eval/questions.json) holds 10 questions (5 English, 5 French: batteries, heat pumps, mRNA,
+sea level, CRISPR, nuclear power, transformers, GDPR, SVB, inflation), each with 5 expected key points. Every metric
+is computed from what a research leaves behind (checkpointed state, report, sources, chunks, timings), so scoring
+never runs a research again ([app/evaluation/metrics.py](app/evaluation/metrics.py)):
+
+- **Coverage**: key points found in the report body, and anywhere in the research (unverified claims included).
+- **Retrieval**: is the chunk a claim was extracted from among the passages retrieved to check it? The origin chunk
+  is a free, objective relevance label (recall and mean reciprocal rank).
+- **Citations**: for each supported claim, are its numbers in the cited passages, how many of its words do they
+  share, is it backed by a second source, how many cited passages really state it; then a stricter model judge
+  ([app/evaluation/judge.py](app/evaluation/judge.py)) and manual annotations
+  ([eval/annotations.json](eval/annotations.json)).
+- **Latency and cost**: seconds per step, model calls, tokens.
+
+**Baseline** (`qwen2.5:3b`, laptop CPU, depth *quick*; full tables in [eval/results/](eval/results/)):
+
+| Metric | Before | After the fixes below |
+| --- | --- | --- |
+| Researches completed | 10 / 10 | |
+| Key points in the report / anywhere in the research | 32 % / 64 % | |
+| Retrieval: origin chunk among the passages checked (recall, MRR) | 96 %, 0.79 | |
+| Claims checked / supported | 23 / 23 | |
+| Supported claims whose cited passages state them (manual annotation) | 87 % | |
+| Cited passages per claim | 3.9 | 3.1 |
+| Cited passages that contain most of the claim's words | 65 % | 84 % |
+| Claims whose numbers are all in the cited passages | 91 % | 96 % |
+| Fact Checker status agrees with the annotation | 52 % | 56 % |
+| Model judge agrees with the annotation | 52 % | |
+| Duration per research, mean | 16.5 min | |
+| Cost | $0 | |
+
+What it shows:
+
+- **No invented claim.** Of the 23 claims the Fact Checker supported, 17 are fully stated by their passages and 6
+  partly: they shift a date or the scope (a technology expected "in the coming years" becomes an advance "between
+  2010 and 2020", "prospects" become current use, an advantage is one the source lists under "issues"). The Fact
+  Checker errs more often the other way: 7 claims stated almost word for word were rated partial or conflicting.
+- **Coverage is limited by the time budget, not by retrieval.** Half the key points are found by the research but
+  never reach the report: *quick* checks 2 claims per sub-question and stops at 15 minutes, and one check takes about
+  2 minutes on a CPU; 72 claims were left unchecked by the claim limit and 14 by the time limit. Retrieval finds the
+  origin passage of 96 % of the claims.
+- **The model judge is not reliable** with a 3B model (52 % agreement with the annotation), so the annotations,
+  not the judge, are the reference. They were made by the AI assistant that built the project, against the same rubric,
+  not by an independent reviewer.
+
+Fixes, validated by replaying the text rules on the stored verdicts (`--replay-rules`, no model call):
+
+- the Fact Checker no longer cites a supporting passage that shares few of the claim's words compared with the best
+  one (skipped when no passage shares many words, as for a claim and passages in different languages);
+- a `VERIFIED` claim with a figure or a year that its cited passages lack becomes `PARTIALLY_VERIFIED` (it caught
+  "between 2010 and 2020", which no passage stated);
+- the phrases that introduced a passage id ("as described in P1", "comme le souligne (passage 1)") are removed with
+  it, instead of leaving "as described in." in the report.
+
 ## Roadmap
 
 | Phase | Content | Status |
@@ -271,7 +333,7 @@ single process, and the local model uses the whole CPU anyway. Text from the web
 | 6 | Orchestration with LangGraph: routing, iteration limits, checkpointing | done |
 | 7 | Citations and reports: claim traceability, Markdown and PDF export | done |
 | 8 | Streamlit dashboard: history, progress, sources | done |
-| 9 | Evaluation: 20+ questions, RAG quality, citation accuracy, coverage, latency, cost | |
+| 9 | Evaluation: 10 questions, RAG quality, citation accuracy, coverage, latency, cost | done |
 | 10 | Security: secrets, URL validation, SSRF protection, rate limits, prompt injection | |
 | 11 | Packaging: Docker, docker-compose, reproducible demo | |
 
@@ -305,10 +367,12 @@ app/
   reports/
     export.py        Markdown, HTML and PDF rendering, escaping of web text
     i18n.py          workflow reasons in the report language
+  evaluation/        questions, metrics, citation judge, evaluation runner
   jobs.py            research history, background runs, cancel and resume
   llm.py             Ollama and Anthropic clients with structured output and cost tracking
+eval/                questions, manual annotations, results
 frontend/
   dashboard.py       Streamlit dashboard: new research, progress, history, report, claims, sources
 storage/             local documents, vector index, database, reports (not committed)
-tests/               233 tests, no network, no credits and no model download
+tests/               258 tests, no network, no credits and no model download
 ```

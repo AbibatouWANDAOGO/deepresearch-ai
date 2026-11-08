@@ -43,7 +43,7 @@ class RuleLLM:
         if name == "AnalysisDraft":
             topic = "alpha" if "alpha" in user.split("Passages:")[0] else "beta"
             return AnalysisDraft(summary=f"About {topic}.", disagreements=[], gaps=[], findings=[
-                Finding(statement=f"{topic} fact {i}", passage_ids=["P1"]) for i in range(self.findings)])
+                Finding(statement=f"{topic} fact {chr(97 + i)}", passage_ids=["P1"]) for i in range(self.findings)])
         if name == "VerdictDraft":
             claim = user.split("\n", 1)[0]
             status = self.verdict(claim, self.calls[name])
@@ -184,7 +184,7 @@ def test_claims_beyond_the_limit_are_marked_not_checked(tmp_path):
     assert q1[2]["justification"] == "not checked: claim limit per sub-question" and q1[2]["skipped"]
     assert llm.calls["VerdictDraft"] == 4
     assert state["cycle"] == 0  # skipped claims do not trigger another research cycle
-    assert "alpha fact 2" in [u["text"] for u in state["report"]["uncertainties"]]
+    assert "alpha fact c" in [u["text"] for u in state["report"]["uncertainties"]]
 
 
 def test_claim_ids_stay_unique_across_cycles(tmp_path):

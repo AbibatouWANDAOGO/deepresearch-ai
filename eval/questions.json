@@ -1,0 +1,125 @@
+{
+  "description": "Evaluation questions. Each key point is a fact a good answer should contain; it counts as covered when one of its terms appears in the report (case and accents ignored, terms match at the start of a word).",
+  "questions": [
+    {
+      "id": "battery-prices",
+      "language": "en",
+      "question": "What are the main reasons lithium-ion battery prices have fallen since 2010?",
+      "key_points": [
+        {"name": "economies of scale", "any_of": ["economies of scale", "scale", "mass production", "manufacturing capacity", "gigafactor"]},
+        {"name": "cell chemistry", "any_of": ["lfp", "lithium iron phosphate", "chemistr", "cathode"]},
+        {"name": "energy density", "any_of": ["energy density", "energy densities"]},
+        {"name": "raw material costs", "any_of": ["raw material", "lithium price", "commodit", "materials cost"]},
+        {"name": "size of the fall", "any_of": ["90%", "90 %", "89%", "1,400", "1 400", "1400"]}
+      ]
+    },
+    {
+      "id": "heat-pump",
+      "language": "fr",
+      "question": "Comment fonctionne une pompe à chaleur et pourquoi est-elle plus efficace qu'un radiateur électrique ?",
+      "key_points": [
+        {"name": "fluide frigorigène", "any_of": ["fluide frigorigene", "frigorigene", "refrigerant", "fluide caloporteur"]},
+        {"name": "compresseur", "any_of": ["compresseur", "compression"]},
+        {"name": "coefficient de performance", "any_of": ["cop", "coefficient de performance"]},
+        {"name": "chaleur prélevée dans l'environnement", "any_of": ["air exterieur", "geotherm", "aerotherm", "capte", "preleve", "extrait"]},
+        {"name": "3 à 4 fois plus d'énergie restituée", "any_of": ["3 a 4", "3 a 5", "trois fois", "3 fois", "4 fois", "300 %", "300%"]}
+      ]
+    },
+    {
+      "id": "mrna-vaccines",
+      "language": "en",
+      "question": "How do mRNA vaccines work?",
+      "key_points": [
+        {"name": "spike protein", "any_of": ["spike"]},
+        {"name": "lipid nanoparticles", "any_of": ["lipid nanoparticle", "lipid", "nanoparticle"]},
+        {"name": "translation by the cell", "any_of": ["ribosome", "translat", "instructions"]},
+        {"name": "immune response", "any_of": ["antibod", "immune response", "t cell", "t-cell"]},
+        {"name": "no change to DNA", "any_of": ["dna", "nucleus", "degrad", "broken down"]}
+      ]
+    },
+    {
+      "id": "sea-level",
+      "language": "fr",
+      "question": "Pourquoi le niveau des mers monte-t-il ?",
+      "key_points": [
+        {"name": "dilatation thermique", "any_of": ["dilatation", "expansion thermique"]},
+        {"name": "fonte des glaciers", "any_of": ["glacier"]},
+        {"name": "calottes polaires", "any_of": ["calotte", "inlandsis", "groenland", "antarctique"]},
+        {"name": "réchauffement climatique", "any_of": ["rechauffement", "changement climatique", "gaz a effet de serre"]},
+        {"name": "rythme de la hausse", "any_of": ["mm par an", "mm/an", "millimetre", "cm"]}
+      ]
+    },
+    {
+      "id": "crispr",
+      "language": "en",
+      "question": "What is CRISPR-Cas9 and how does it edit genes?",
+      "key_points": [
+        {"name": "guide RNA", "any_of": ["guide rna", "grna", "sgrna", "guide"]},
+        {"name": "Cas9 cuts DNA", "any_of": ["cut", "cleav", "double-strand", "double strand"]},
+        {"name": "PAM sequence", "any_of": ["pam", "protospacer"]},
+        {"name": "DNA repair", "any_of": ["repair", "nhej", "homology"]},
+        {"name": "bacterial origin", "any_of": ["bacteri"]}
+      ]
+    },
+    {
+      "id": "nuclear-power",
+      "language": "fr",
+      "question": "Quels sont les principaux avantages et inconvénients de l'énergie nucléaire ?",
+      "key_points": [
+        {"name": "faibles émissions de CO2", "any_of": ["bas carbone", "decarbon", "co2", "emissions", "gaz a effet de serre"]},
+        {"name": "déchets radioactifs", "any_of": ["dechet"]},
+        {"name": "coût et délais", "any_of": ["cout", "cher", "investissement", "retard"]},
+        {"name": "risque d'accident", "any_of": ["accident", "tchernobyl", "fukushima", "surete", "catastrophe"]},
+        {"name": "production pilotable", "any_of": ["pilotable", "production continue", "stable", "intermitten"]}
+      ]
+    },
+    {
+      "id": "transformer",
+      "language": "en",
+      "question": "How does the transformer architecture used in large language models work?",
+      "key_points": [
+        {"name": "attention", "any_of": ["attention"]},
+        {"name": "self-attention", "any_of": ["self-attention", "self attention"]},
+        {"name": "2017 paper", "any_of": ["2017", "all you need", "vaswani"]},
+        {"name": "tokens and embeddings", "any_of": ["token", "embedding"]},
+        {"name": "parallel processing", "any_of": ["parallel"]}
+      ]
+    },
+    {
+      "id": "gdpr",
+      "language": "fr",
+      "question": "Quelles obligations le RGPD impose-t-il aux entreprises ?",
+      "key_points": [
+        {"name": "consentement et base légale", "any_of": ["consentement", "base legale", "licite"]},
+        {"name": "délégué à la protection des données", "any_of": ["dpo", "delegue a la protection"]},
+        {"name": "notification des violations", "any_of": ["72 heures", "72 h", "72h", "violation"]},
+        {"name": "droits des personnes", "any_of": ["droit d'acces", "droit a l'effacement", "droit a l'oubli", "portabilite", "droits des personnes"]},
+        {"name": "sanctions", "any_of": ["amende", "sanction", "4 %", "4%", "20 millions"]}
+      ]
+    },
+    {
+      "id": "svb-collapse",
+      "language": "en",
+      "question": "Why did Silicon Valley Bank collapse in March 2023?",
+      "key_points": [
+        {"name": "rising interest rates", "any_of": ["interest rate", "rate hike", "rising rates", "higher rates"]},
+        {"name": "losses on bonds", "any_of": ["bond", "treasur", "securities", "unrealized loss"]},
+        {"name": "bank run", "any_of": ["bank run", "withdraw", "run on"]},
+        {"name": "uninsured deposits", "any_of": ["uninsured", "fdic"]},
+        {"name": "concentrated tech clientele", "any_of": ["startup", "start-up", "tech", "venture"]}
+      ]
+    },
+    {
+      "id": "inflation-france-2022",
+      "language": "fr",
+      "question": "Quelles sont les causes de l'inflation en France en 2022 ?",
+      "key_points": [
+        {"name": "prix de l'énergie", "any_of": ["energie", "energetique", "petrole", "gaz", "electricite"]},
+        {"name": "guerre en Ukraine", "any_of": ["ukraine", "russie"]},
+        {"name": "prix alimentaires", "any_of": ["aliment"]},
+        {"name": "reprise après la pandémie", "any_of": ["covid", "pandemie", "reprise", "approvisionnement"]},
+        {"name": "niveau de l'inflation", "any_of": ["5,2", "5.2", "5,9", "5.9", "6 %", "6%"]}
+      ]
+    }
+  ]
+}
