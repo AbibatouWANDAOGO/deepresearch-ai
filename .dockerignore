@@ -1,0 +1,17 @@
+# Never in the image: secrets, local data, the project brief, caches
+.env
+.env.*
+!.env.example
+storage/
+*.docx
+.git/
+.venv/
+venv/
+**/__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.vscode/
+.idea/
+.streamlit/secrets.toml
+eval/results/

@@ -129,6 +129,7 @@ def print_report(state: ResearchState) -> None:
 
 def main(argv: list[str] | None = None) -> int:
     from app.config import get_settings
+    from app.logs import log, redact, setup_logging
 
     parser = argparse.ArgumentParser(description="Run or resume a full research.")
     parser.add_argument("question", nargs="?")
@@ -139,7 +140,9 @@ def main(argv: list[str] | None = None) -> int:
     if not args.question and not args.resume:
         parser.error("give a question or --resume RESEARCH_ID")
 
-    runner = build_runner(get_settings())
+    settings = get_settings()
+    setup_logging(settings)
+    runner = build_runner(settings)
     started = time.perf_counter()
     research_id = args.resume or args.research_id or f"r-{uuid.uuid4().hex[:10]}"
     if args.resume:
@@ -150,7 +153,8 @@ def main(argv: list[str] | None = None) -> int:
         steps = runner.stream(args.question, args.language, research_id)
     for _, update in steps:
         for e in (update or {}).get("events", []):
-            print(f"[{time.perf_counter() - started:6.0f}s] {e['node']:<10} {e['message']}", flush=True)
+            print(redact(f"[{time.perf_counter() - started:6.0f}s] {e['node']:<10} {e['message']}"), flush=True)
+            log("research_event", research_id=research_id, node=e["node"], message=e["message"])
     state = runner.state(research_id)
     print_report(state)
     usage = runner.deps.planner.llm.tracker.usage

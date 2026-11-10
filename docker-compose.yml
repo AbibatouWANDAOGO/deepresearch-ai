@@ -1,0 +1,51 @@
+# docker compose up -d        -> dashboard on http://localhost:8501
+# The first start downloads the language model (about 2 GB) and, at the first research,
+# the embedding and reranking models (about 1.5 GB). Everything is kept in volumes.
+
+services:
+  ollama:
+    image: ollama/ollama:0.40.15
+    volumes:
+      - ollama-models:/root/.ollama
+    # Not published on the host: only the app container talks to it.
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+    restart: unless-stopped
+
+  # One-shot: pulls the model into the volume (instant once it is there).
+  ollama-pull:
+    image: ollama/ollama:0.40.15
+    environment:
+      OLLAMA_HOST: ollama:11434
+    entrypoint: ["ollama", "pull", "${OLLAMA_MODEL:-qwen2.5:3b}"]
+    depends_on:
+      ollama:
+        condition: service_healthy
+    restart: "no"
+
+  app:
+    build: .
+    image: deepresearch-ai:0.1
+    env_file:
+      - path: .env
+        required: false   # optional: without it, the free defaults apply (Ollama + DuckDuckGo)
+    environment:
+      OLLAMA_BASE_URL: http://ollama:11434
+      STORAGE_DIR: /app/storage   # a path from a local .env would not exist here
+    ports:
+      - "127.0.0.1:8501:8501"
+    volumes:
+      - storage:/app/storage
+      - hf-cache:/cache/huggingface
+    depends_on:
+      ollama-pull:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+volumes:
+  ollama-models:
+  storage:
+  hf-cache:

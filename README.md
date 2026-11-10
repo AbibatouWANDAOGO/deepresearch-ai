@@ -4,7 +4,7 @@ An autonomous research agent. Given a question, it plans the research, searches 
 indexes them for retrieval-augmented generation (RAG), fact-checks the important claims and writes a structured report
 with traceable citations.
 
-**Status: phase 8 of 11 (dashboard).** Researches are started and followed from a Streamlit dashboard (or the command line) and produce a cited report in Markdown, PDF and JSON; see the [roadmap](#roadmap).
+**Status: complete (11 phases).** Researches are started and followed from a Streamlit dashboard (or the command line), run on a free local model by default, and produce a cited, fact-checked report in Markdown, PDF and JSON. The project is [evaluated](#evaluation) on 10 questions, [hardened](#security) against SSRF and prompt injection, and runs with one `docker compose up`; see the [roadmap](#roadmap).
 
 ## Design principles
 
@@ -33,6 +33,44 @@ pytest                                 # run the tests
 
 `python -m app.main` prints the active configuration (secrets are only reported as "set" or "not set") and exits with
 an error message if the configuration is invalid, for example a paid provider selected without `ALLOW_PAID_APIS=true`.
+
+## Docker
+
+Requires Docker Desktop (or Docker Engine with Compose v2.24 or later). Nothing else: Python, Ollama and the models
+run in containers.
+
+```bash
+docker compose up -d --build      # first start: builds the image and downloads the model (a few GB)
+# open http://localhost:8501
+docker compose logs -f app        # follow the dashboard and the researches
+docker compose down               # stop (volumes, models and researches are kept)
+```
+
+| Service | Role |
+| --- | --- |
+| `ollama` | the local language model server (`qwen2.5:3b` by default), not reachable from the host |
+| `ollama-pull` | one-shot: downloads the model into its volume, then exits |
+| `app` | the dashboard and the research worker, as an unprivileged user |
+
+- **Configuration**: an optional `.env` (copied from `.env.example`) is read as in a local install; the Ollama address
+  and the storage directory are set by `docker-compose.yml`. Without `.env`, the free defaults apply (Ollama and
+  DuckDuckGo search). `OLLAMA_MODEL=qwen2.5:7b docker compose up -d` pulls and uses another model.
+- **Data** lives in volumes: `storage` (database, documents, vector index, reports, logs), `hf-cache` (embedding and
+  reranking models, downloaded at the first research) and `ollama-models`.
+- **Security**: the image contains no secret and no local data (see `.dockerignore`); the dashboard port is published
+  on `127.0.0.1` only.
+
+**Reproducible demo**
+
+```bash
+docker compose run --rm --no-deps app pytest -q     # the test suite, no network or model needed
+docker compose run --rm app python -m app.graph.workflow "Pourquoi les pompes à chaleur sont-elles efficaces ?" --language fr
+docker compose run --rm app python -m app.evaluation.run run --name docker --only heat-pump
+docker compose run --rm app python -m app.evaluation.run score --name docker
+```
+
+The research prints each step and the cited report; it also appears in the dashboard history. On a laptop CPU a
+*quick* research takes about 15 minutes.
 
 ## Configuration
 
@@ -356,9 +394,9 @@ stored error of a failed research; hostile search results cannot close their `<d
 | 8 | Streamlit dashboard: history, progress, sources | done |
 | 9 | Evaluation: 10 questions, RAG quality, citation accuracy, coverage, latency, cost | done |
 | 10 | Security: secrets, URL validation, SSRF and DNS rebinding protection, rate limits, prompt injection, redacted logs | done |
-| 11 | Packaging: Docker, docker-compose, reproducible demo | |
+| 11 | Packaging: Docker, docker-compose, reproducible demo | done |
 
-## Project structure (current)
+## Project structure
 
 ```text
 app/
@@ -395,6 +433,8 @@ app/
 eval/                questions, manual annotations, results
 frontend/
   dashboard.py       Streamlit dashboard: new research, progress, history, report, claims, sources
+Dockerfile, docker-compose.yml, .dockerignore   container image and services
+.streamlit/          dashboard server settings (localhost only, XSRF protection)
 storage/             local documents, vector index, database, reports (not committed)
-tests/               280 tests, no network, no credits and no model download
+tests/               283 tests, no network, no credits and no model download
 ```
