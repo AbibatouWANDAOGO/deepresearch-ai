@@ -6,6 +6,41 @@ with traceable citations.
 
 **Status: complete (11 phases).** Researches are started and followed from a Streamlit dashboard (or the command line), run on a free local model by default, and produce a cited, fact-checked report in Markdown, PDF and JSON. The project is [evaluated](#evaluation) on 10 questions, [hardened](#security) against SSRF and prompt injection, and runs with one `docker compose up`; see the [roadmap](#roadmap).
 
+![Project map: the research pipeline and the phase that built each part](docs/images/project_map.svg)
+
+**How it was built, phase by phase** (goal, decisions, problems met and fixes, proof):
+[docs/how-it-was-built.md](docs/how-it-was-built.md).
+
+## Results at a glance
+
+| | |
+| --- | --- |
+| Researches completed on the 10-question benchmark | **10 / 10** (5 French, 5 English) |
+| Supported claims whose cited passages state them (manual annotation) | **87 %**, no invented claim |
+| Passage a claim came from, retrieved again to check it (recall) | **96 %** |
+| Cited passages that really state the claim, after the Fact Checker fixes | **65 % → 84 %** |
+| Mean duration of a *quick* research on a laptop CPU | **16.5 min** |
+| Cost of the whole project, evaluation included | **$0** (local model) |
+| Tests | **283**, no network, model or credit needed |
+| Security | SSRF and DNS rebinding blocked (tested against a real local server), keys redacted from logs |
+| Docker | one command; a full French research ran end to end in the container |
+
+<table>
+<tr>
+<td width="50%"><img src="docs/images/dashboard_report.png" alt="Report view: verification counts, status badges and citations"></td>
+<td width="50%"><img src="docs/images/dashboard_claim_trace.png" alt="Claims view: each claim with its justification and the exact passages, with character offsets"></td>
+</tr>
+<tr>
+<td>Report: every statement carries its status and its <code>[S#]</code> citations.</td>
+<td>Traceability: a claim, its justification, and the exact passages with their position in the source.</td>
+</tr>
+</table>
+
+![Coverage per question](docs/images/eval_coverage.png)
+
+Example output: [a French report on heat pumps](docs/examples/heat-pump-report-fr.md) ([PDF](docs/examples/heat-pump-report-fr.pdf)),
+produced in Docker by the local model.
+
 ## Design principles
 
 - **Zero cost by default.** The default language model runs locally with [Ollama](https://ollama.com/). Paid APIs
@@ -336,6 +371,9 @@ never runs a research again ([app/evaluation/metrics.py](app/evaluation/metrics.
 | Duration per research, mean | 16.5 min | |
 | Cost | $0 | |
 
+![Where the claims went](docs/images/eval_claims.png)
+![Time per step](docs/images/eval_time.png)
+
 What it shows:
 
 - **No invented claim.** Of the 23 claims the Fact Checker supported, 17 are fully stated by their passages and 6
@@ -351,6 +389,8 @@ What it shows:
   not by an independent reviewer.
 
 Fixes, validated by replaying the text rules on the stored verdicts (`--replay-rules`, no model call):
+
+![Fact Checker fixes](docs/images/eval_fixes.png)
 
 - the Fact Checker no longer cites a supporting passage that shares few of the claim's words compared with the best
   one (skipped when no passage shares many words, as for a claim and passages in different languages);
@@ -431,6 +471,7 @@ app/
   logs.py            structured JSON logs with secret redaction
   llm.py             Ollama and Anthropic clients with structured output and cost tracking
 eval/                questions, manual annotations, results
+docs/                how it was built, images, example report
 frontend/
   dashboard.py       Streamlit dashboard: new research, progress, history, report, claims, sources
 Dockerfile, docker-compose.yml, .dockerignore   container image and services
