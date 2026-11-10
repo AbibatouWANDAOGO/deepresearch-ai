@@ -1,0 +1,174 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 1010" width="1200" height="1010" font-family="Segoe UI, Helvetica, Arial, sans-serif">
+  <title>One answer, agent by agent: what each agent received and produced for the question on heat pumps</title>
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#52514e"/>
+    </marker>
+    <style>
+      .h { font-size: 22px; font-weight: 700; fill: #0b0b0b; }
+      .s { font-size: 13px; fill: #52514e; }
+      .col { font-size: 11.5px; font-weight: 700; fill: #52514e; letter-spacing: 0.06em; }
+      .row { fill: #ffffff; stroke: #d6d4cf; stroke-width: 1.5; }
+      .code { fill: #f3f2ee; stroke: #d6d4cf; stroke-width: 1.5; stroke-dasharray: 5 4; }
+      .name { font-size: 16px; font-weight: 700; fill: #0b0b0b; }
+      .role { font-size: 12px; fill: #52514e; }
+      .t { font-size: 12.5px; fill: #0b0b0b; }
+      .m { font-size: 12.5px; fill: #52514e; }
+      .q { font-size: 12.5px; fill: #1c5cab; font-style: italic; }
+      .g { font-size: 12px; fill: #52514e; }
+      .gk { font-size: 12px; fill: #0b0b0b; font-weight: 700; }
+      .llm { fill: #2a78d6; }
+      .cd { fill: #8a8984; }
+      .bt { font-size: 11px; font-weight: 700; fill: #ffffff; }
+      .num { font-size: 13px; font-weight: 700; fill: #0b0b0b; }
+    </style>
+  </defs>
+  <rect width="1200" height="1010" fill="#fcfcfb"/>
+  <text x="30" y="40" class="h">One answer, agent by agent</text>
+  <text x="30" y="62" class="s">Real research run in Docker: « Pourquoi les pompes à chaleur sont-elles efficaces ? » · qwen2.5:3b on a laptop CPU · 16 model calls · 31 min · $0</text>
+
+  <text x="46" y="96" class="col">AGENT</text>
+  <text x="250" y="96" class="col">RECEIVES</text>
+  <text x="470" y="96" class="col">PRODUCED IN THIS RESEARCH</text>
+  <text x="900" y="96" class="col">CHECKED BY CODE</text>
+  <text x="1090" y="96" class="col">COST</text>
+
+  <!-- 1 Planner -->
+  <rect x="30" y="108" width="1140" height="104" rx="10" class="row"/>
+  <rect x="46" y="122" width="40" height="18" rx="9" class="llm"/><text x="66" y="135" class="bt" text-anchor="middle">LLM</text>
+  <text x="46" y="162" class="name">1 · Planner</text>
+  <text x="46" y="182" class="role">turns the question</text>
+  <text x="46" y="198" class="role">into a research plan</text>
+  <text x="250" y="140" class="t">the question,</text>
+  <text x="250" y="158" class="t">the report language,</text>
+  <text x="250" y="176" class="t">the depth</text>
+  <text x="470" y="134" class="t"><tspan class="num">3 sub-questions</tspan>, <tspan class="num">9 search queries</tspan>, 4 quality criteria:</text>
+  <text x="470" y="154" class="q">Q1 Quelles sont les principales caractéristiques techniques ?</text>
+  <text x="470" y="172" class="q">Q2 Quels sont les principaux avantages écologiques ?</text>
+  <text x="470" y="190" class="q">Q3 Quels facteurs influencent l'efficacité ?</text>
+  <text x="900" y="140" class="g">number of sub-questions</text>
+  <text x="900" y="158" class="g">capped, ids renumbered,</text>
+  <text x="900" y="176" class="g">duplicate or empty</text>
+  <text x="900" y="194" class="g">queries removed</text>
+  <text x="1090" y="150" class="num">1 call</text>
+  <text x="1090" y="170" class="m">1 min</text>
+
+  <!-- 2 Researcher -->
+  <rect x="30" y="222" width="1140" height="104" rx="10" class="row"/>
+  <rect x="46" y="236" width="40" height="18" rx="9" class="llm"/><text x="66" y="249" class="bt" text-anchor="middle">LLM</text>
+  <text x="46" y="276" class="name">2 · Researcher</text>
+  <text x="46" y="296" class="role">picks the sources</text>
+  <text x="46" y="312" class="role">worth reading</text>
+  <text x="250" y="254" class="t">search results for each</text>
+  <text x="250" y="272" class="t">sub-question (Tavily,</text>
+  <text x="250" y="290" class="t">DuckDuckGo fallback)</text>
+  <text x="470" y="248" class="t"><tspan class="num">9 sources</tspan> selected, 3 per sub-question, for example:</text>
+  <text x="470" y="268" class="q">négaWatt, « Fiche technique : pompe à chaleur » (PDF)</text>
+  <text x="470" y="286" class="q">Vaillant, « Rendement des pompes à chaleur : COP et SCOP »</text>
+  <text x="470" y="304" class="q">Greenter, « 8 facteurs clés pour un COP optimal »</text>
+  <text x="900" y="254" class="g">results merged across</text>
+  <text x="900" y="272" class="g">queries, known URLs</text>
+  <text x="900" y="290" class="g">skipped, invented labels</text>
+  <text x="900" y="308" class="g">ignored</text>
+  <text x="1090" y="264" class="num">3 calls</text>
+  <text x="1090" y="284" class="m">3 min</text>
+
+  <!-- 3 Collect + index -->
+  <rect x="30" y="336" width="1140" height="86" rx="10" class="code"/>
+  <rect x="46" y="350" width="44" height="18" rx="9" class="cd"/><text x="68" y="363" class="bt" text-anchor="middle">code</text>
+  <text x="46" y="390" class="name">3 · Collect + index</text>
+  <text x="46" y="410" class="role">no model involved</text>
+  <text x="250" y="368" class="t">the 9 URLs</text>
+  <text x="470" y="362" class="t"><tspan class="num">9 / 9</tspan> pages downloaded (1 PDF), <tspan class="num">110,000</tspan> characters of clean text,</text>
+  <text x="470" y="380" class="t"><tspan class="num">70 passages</tspan> indexed twice: E5 vectors in Qdrant and BM25 keywords;</text>
+  <text x="470" y="398" class="t">each passage keeps its source, page and character offsets</text>
+  <text x="900" y="368" class="g">public addresses only,</text>
+  <text x="900" y="386" class="g">robots.txt, size limit,</text>
+  <text x="900" y="404" class="g">duplicates removed</text>
+  <text x="1090" y="378" class="num">0 call</text>
+  <text x="1090" y="398" class="m">1 min</text>
+
+  <!-- 4 Analyst -->
+  <rect x="30" y="432" width="1140" height="122" rx="10" class="row"/>
+  <rect x="46" y="446" width="40" height="18" rx="9" class="llm"/><text x="66" y="459" class="bt" text-anchor="middle">LLM</text>
+  <text x="46" y="486" class="name">4 · Analyst</text>
+  <text x="46" y="506" class="role">reads the passages,</text>
+  <text x="46" y="522" class="role">extracts claims</text>
+  <text x="250" y="464" class="t">the 5 best passages</text>
+  <text x="250" y="482" class="t">for each sub-question</text>
+  <text x="250" y="500" class="t">(hybrid search + RRF</text>
+  <text x="250" y="518" class="t">+ reranker)</text>
+  <text x="470" y="458" class="t"><tspan class="num">18 claims</tspan>, each tied to the passages it comes from, and gaps:</text>
+  <text x="470" y="478" class="q">C13 Le rendement dépend du type de PAC, du système de diffusion,</text>
+  <text x="470" y="496" class="q">     de la température de départ d'eau, de l'isolation, de l'Inverter</text>
+  <text x="470" y="514" class="q">C17 L'Inverter peut augmenter le rendement réel de 20 à 30 %</text>
+  <text x="470" y="532" class="q">Gap: aucun passage n'explique comment le SCOP est déterminé</text>
+  <text x="900" y="464" class="g">cited passage ids checked:</text>
+  <text x="900" y="482" class="g">invented ids dropped,</text>
+  <text x="900" y="500" class="g">prompt references (P1)</text>
+  <text x="900" y="518" class="g">removed from the text</text>
+  <text x="1090" y="484" class="num">3 calls</text>
+  <text x="1090" y="504" class="m">9 min</text>
+
+  <!-- 5 Fact Checker -->
+  <rect x="30" y="564" width="1140" height="122" rx="10" class="row" style="stroke:#2a78d6;stroke-width:2"/>
+  <rect x="46" y="578" width="40" height="18" rx="9" class="llm"/><text x="66" y="591" class="bt" text-anchor="middle">LLM</text>
+  <text x="46" y="618" class="name">5 · Fact Checker</text>
+  <text x="46" y="638" class="role">checks each claim</text>
+  <text x="46" y="654" class="role">against fresh passages</text>
+  <text x="250" y="596" class="t">one claim, and the</text>
+  <text x="250" y="614" class="t">passages retrieved</text>
+  <text x="250" y="632" class="t">again for that claim</text>
+  <text x="470" y="590" class="t"><tspan class="num">8 claims checked</tspan>: 4 verified, 3 partially verified, 1 disputed;</text>
+  <text x="470" y="608" class="t">10 not examined (3 claims per sub-question, 30-minute limit)</text>
+  <text x="470" y="628" class="q">C13 verified: stated by [S3] [S4] [S8], characters 6933–7133 of [S8]…</text>
+  <text x="470" y="646" class="q">C2 disputed: the SCOP thresholds are supported by [S3] [S4] [S5]</text>
+  <text x="470" y="664" class="q">     and contradicted by [S6]</text>
+  <text x="900" y="596" class="g">no "verified" without a</text>
+  <text x="900" y="614" class="g">valid passage, nor with a</text>
+  <text x="900" y="632" class="g">figure the passages lack;</text>
+  <text x="900" y="650" class="g">off-topic passages not cited</text>
+  <text x="1090" y="616" class="num">8 calls</text>
+  <text x="1090" y="636" class="m">16 min</text>
+
+  <!-- 6 Router -->
+  <rect x="30" y="696" width="1140" height="86" rx="10" class="code"/>
+  <rect x="46" y="710" width="44" height="18" rx="9" class="cd"/><text x="68" y="723" class="bt" text-anchor="middle">code</text>
+  <text x="46" y="750" class="name">6 · Router</text>
+  <text x="46" y="770" class="role">LangGraph decision</text>
+  <text x="250" y="728" class="t">the verdicts, the time</text>
+  <text x="250" y="746" class="t">spent, the cycles done</text>
+  <text x="470" y="722" class="t">a weakly supported sub-question would get <tspan class="num">another research cycle</tspan>;</text>
+  <text x="470" y="740" class="t">here the 30-minute limit was reached, so it went straight to the report</text>
+  <text x="470" y="758" class="t">with what it had (and says so in the limitations)</text>
+  <text x="900" y="728" class="g">bounded cycles, time</text>
+  <text x="900" y="746" class="g">limit, checkpoint after</text>
+  <text x="900" y="764" class="g">every step (resumable)</text>
+  <text x="1090" y="738" class="num">0 call</text>
+
+  <!-- 7 Writer -->
+  <rect x="30" y="792" width="1140" height="122" rx="10" class="row"/>
+  <rect x="46" y="806" width="40" height="18" rx="9" class="llm"/><text x="66" y="819" class="bt" text-anchor="middle">LLM</text>
+  <text x="46" y="846" class="name">7 · Writer</text>
+  <text x="46" y="866" class="role">writes the report</text>
+  <text x="250" y="824" class="t">only the checked claims</text>
+  <text x="250" y="842" class="t">and their statuses,</text>
+  <text x="250" y="860" class="t">never web text</text>
+  <text x="470" y="818" class="t">model: the title and a 3-sentence summary naming its claims;</text>
+  <text x="470" y="836" class="t">code: <tspan class="num">8 cited statements</tspan> with their status wording, <tspan class="num">8 sources</tspan>,</text>
+  <text x="470" y="854" class="t">10 unverified points listed apart, limitations, bibliography</text>
+  <text x="470" y="874" class="q">« Caractéristiques et avantages écologiques des pompes à chaleur »</text>
+  <text x="470" y="892" class="t">→ report.md, report.pdf, report.json</text>
+  <text x="900" y="824" class="g">a summary sentence that</text>
+  <text x="900" y="842" class="g">adds a figure or words not</text>
+  <text x="900" y="860" class="g">in its claims is dropped;</text>
+  <text x="900" y="878" class="g">citations added by code</text>
+  <text x="1090" y="844" class="num">1 call</text>
+  <text x="1090" y="864" class="m">1 min</text>
+
+
+  <!-- Footer funnel -->
+  <text x="30" y="946" class="gk">From question to report:</text>
+  <text x="30" y="970" class="t">1 question → 3 sub-questions → 9 queries → 9 sources → 70 passages → 18 claims → 8 checked → 8 cited statements, 8 sources, 10 points kept apart</text>
+  <text x="30" y="994" class="g">Blue badge: a language-model agent. Grey dashed row: plain code. In every row, the model's output is checked by code before the next step uses it.</text>
+</svg>

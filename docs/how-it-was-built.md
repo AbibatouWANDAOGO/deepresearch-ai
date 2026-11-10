@@ -6,6 +6,9 @@ and the proof.
 
 ![Project map](images/project_map.svg)
 
+To see what each agent does on a real question, from the Planner to the report, read
+[One answer, agent by agent](agents-walkthrough.md).
+
 | # | Phase | Main result | Tests |
 | --- | --- | --- | --- |
 | 1 | [Foundations](#phase-1-foundations) | validated settings, free by default | 20 |

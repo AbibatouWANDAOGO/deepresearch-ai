@@ -41,6 +41,14 @@ with traceable citations.
 Example output: [a French report on heat pumps](docs/examples/heat-pump-report-fr.md) ([PDF](docs/examples/heat-pump-report-fr.pdf)),
 produced in Docker by the local model.
 
+## What each agent does, on one real answer
+
+![One answer, agent by agent](docs/images/agents_walkthrough.svg)
+
+Planner → Researcher → collect and index → Analyst → Fact Checker → router → Writer, followed on a real research
+(what each agent received, what it produced, what the code checked, what it cost):
+[docs/agents-walkthrough.md](docs/agents-walkthrough.md).
+
 ## Design principles
 
 - **Zero cost by default.** The default language model runs locally with [Ollama](https://ollama.com/). Paid APIs
