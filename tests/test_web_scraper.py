@@ -1,16 +1,29 @@
 import httpx
 import pytest
 
-from app.tools.web_scraper import Fetcher, FetchStatus, detect_kind
+from app.tools.web_scraper import Fetcher, FetchStatus, HostThrottle, detect_kind
 
 PUBLIC = {"site.org": ["93.184.215.14"], "other.org": ["93.184.215.15"], "intranet.org": ["10.0.0.7"]}
 
 HTML = b"<html><body><p>hello</p></body></html>"
 
 
-def make_fetcher(routes, max_bytes=10_000, max_redirects=3, robots=True):
+class FakeClock:
+    def __init__(self):
+        self.now, self.slept = 0.0, []
+
+    def __call__(self):
+        return self.now
+
+    def sleep(self, seconds):
+        self.slept.append(round(seconds, 3))
+        self.now += seconds
+
+
+def make_fetcher(routes, max_bytes=10_000, max_redirects=3, robots=True, min_delay=0.0):
     """routes: {(host, path): httpx.Response or callable}; unknown paths answer 404."""
     calls = []
+    clock = FakeClock()
 
     def handler(request: httpx.Request) -> httpx.Response:
         calls.append(str(request.url))
@@ -21,8 +34,9 @@ def make_fetcher(routes, max_bytes=10_000, max_redirects=3, robots=True):
 
     fetcher = Fetcher(timeout=5, max_bytes=max_bytes, max_redirects=max_redirects, user_agent="TestBot/1.0",
                       respect_robots=robots, client=httpx.Client(transport=httpx.MockTransport(handler)),
-                      resolver=lambda host: PUBLIC.get(host, []))
-    fetcher.calls = calls
+                      resolver=lambda host: PUBLIC.get(host, []), min_delay_per_host=min_delay,
+                      throttle=HostThrottle(clock, clock.sleep))
+    fetcher.calls, fetcher.clock = calls, clock
     return fetcher
 
 
@@ -143,3 +157,22 @@ def test_robots_can_be_disabled():
 ])
 def test_detect_kind(content_type, url, head, kind):
     assert detect_kind(content_type, url, head) == kind
+
+
+def test_requests_to_one_site_are_spaced_out():
+    routes = {("site.org", "/a"): html_response(), ("site.org", "/b"): html_response(),
+              ("other.org", "/c"): html_response()}
+    fetcher = make_fetcher(routes, robots=False, min_delay=1.0)
+    for url in ("https://site.org/a", "https://other.org/c", "https://site.org/b"):
+        assert fetcher.fetch(url).status == FetchStatus.OK
+    assert fetcher.clock.slept == [1.0]  # only the second request to site.org waited
+
+
+def test_robots_crawl_delay_is_honoured_up_to_a_cap():
+    robots = httpx.Response(200, text="User-agent: *\nCrawl-delay: 30\n")
+    routes = {("site.org", "/robots.txt"): robots, ("site.org", "/a"): html_response(),
+              ("site.org", "/b"): html_response()}
+    fetcher = make_fetcher(routes, min_delay=1.0)
+    fetcher.fetch("https://site.org/a")
+    fetcher.fetch("https://site.org/b")
+    assert fetcher.clock.slept == [10.0]  # 30 s asked, capped at 10 s

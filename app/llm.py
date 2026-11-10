@@ -18,6 +18,7 @@ import httpx
 from pydantic import BaseModel, ValidationError
 
 from app.config import Settings
+from app.logs import log
 
 T = TypeVar("T", bound=BaseModel)
 
@@ -73,6 +74,8 @@ class CostTracker:
         u.output_tokens += output_tokens
         u.cost_usd += (input_tokens * self._in + output_tokens * self._out) / 1_000_000
         u.seconds += seconds
+        log("llm_call", input_tokens=input_tokens, output_tokens=output_tokens, seconds=round(seconds, 1),
+            cost_usd=round(u.cost_usd, 4))
 
 
 class LLMClient(Protocol):

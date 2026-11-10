@@ -47,7 +47,7 @@ SNIPPET_CHARS = 250
 def build_prompt(sub_question: SubQuestion, candidates: list[tuple[str, SearchResult]], max_selected: int) -> str:
     lines = [
         f'<document id="{label}" title="{escape_untrusted(r.title).replace(chr(34), chr(39))}" '
-        f'url="{r.url}">{escape_untrusted(r.snippet[:SNIPPET_CHARS])}</document>'
+        f'url="{escape_untrusted(r.url).replace(chr(34), "%22")}">{escape_untrusted(r.snippet[:SNIPPET_CHARS])}</document>'
         for label, r in candidates
     ]
     return (f"Sub-question: {sub_question.question}\n\nSearch results:\n" + "\n".join(lines)

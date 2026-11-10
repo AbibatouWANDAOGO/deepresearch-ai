@@ -28,6 +28,7 @@ from pydantic import BaseModel
 from app.config import Settings, get_settings
 from app.database.connection import connect
 from app.database.models import AccessStatus, Source, SourceRepository, SourceType
+from app.logs import log
 from app.tools.pdf_reader import ExtractionError, extract_pdf
 from app.tools.web_scraper import Fetcher, FetchResult, FetchStatus
 from app.tools.web_search import SearchResult, normalize_url
@@ -187,6 +188,8 @@ class DocumentCollector:
         base = {"source_id": sid, "research_id": research_id, "url": url, "title": title_hint}
 
         fetched = self.fetcher.fetch(url)
+        log("fetch", research_id=research_id, url=url, final_url=fetched.final_url, status=fetched.status.value,
+            http_status=fetched.http_status, bytes=len(fetched.content or b""), error=fetched.error)
         base.update(final_url=fetched.final_url, collected_at=fetched.fetched_at)
         if fetched.status != FetchStatus.OK:
             return Source(**base, access_status=AccessStatus(fetched.status.value), error=fetched.error)
@@ -246,6 +249,8 @@ def build_collector(settings: Settings) -> DocumentCollector:
         max_redirects=settings.max_redirects,
         user_agent=settings.user_agent,
         respect_robots=settings.respect_robots_txt,
+        min_delay_per_host=settings.min_seconds_per_host,
+        max_crawl_delay=settings.max_crawl_delay_seconds,
     )
     return DocumentCollector(fetcher, SourceRepository(connect(settings.documents_db_path)), settings)
 

@@ -1,6 +1,18 @@
+import http.server
+import threading
+
+import httpcore
+import httpx
 import pytest
 
-from app.tools.url_safety import UnsafeURLError, is_public_ip, validate_url
+from app.tools.url_safety import (
+    PinnedBackend,
+    SafeTransport,
+    UnsafeURLError,
+    is_public_ip,
+    validate_url,
+)
+from app.tools.web_scraper import Fetcher, FetchStatus
 
 DNS = {
     "example.org": ["93.184.215.14"],
@@ -57,3 +69,65 @@ def test_is_public_ip():
     assert not is_public_ip("100.64.0.1")  # carrier-grade NAT
     assert not is_public_ip("224.0.0.1")  # multicast
     assert not is_public_ip("fe80::1%eth0")  # link-local with zone index
+
+
+# --- Connect-time check (DNS rebinding) -----------------------------------------------------
+
+class RecordingBackend(httpcore.NetworkBackend):
+    def __init__(self):
+        self.connected = []
+
+    def connect_tcp(self, host, port, timeout=None, local_address=None, socket_options=None):
+        self.connected.append((host, port))
+        raise httpcore.ConnectError("test backend: no network")
+
+    def sleep(self, seconds):
+        pass
+
+
+def test_connection_goes_to_the_checked_address_not_to_the_name():
+    backend = RecordingBackend()
+    with pytest.raises(httpcore.ConnectError):
+        PinnedBackend(resolver, backend).connect_tcp("example.org", 443)
+    assert backend.connected == [("93.184.215.14", 443)]
+
+
+@pytest.mark.parametrize("host", ["evil-rebind.example", "mixed.example", "127.0.0.1", "[::1]", "unknown.example"])
+def test_connection_to_a_non_public_address_is_refused(host):
+    backend = RecordingBackend()
+    with pytest.raises(httpcore.ConnectError, match="blocked"):
+        PinnedBackend(resolver, backend).connect_tcp(host, 80)
+    assert backend.connected == []
+
+
+def test_dns_rebinding_cannot_reach_a_local_server():
+    """The name resolves to a public address for the URL check, then to 127.0.0.1."""
+    hits = []
+
+    class Handler(http.server.BaseHTTPRequestHandler):
+        def do_GET(self):
+            hits.append(self.path)
+            self.send_response(200)
+            self.end_headers()
+            self.wfile.write(b"secret")
+
+        def log_message(self, *args):
+            pass
+
+    server = http.server.HTTPServer(("127.0.0.1", 0), Handler)
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    answers = iter([["93.184.215.14"], ["127.0.0.1"], ["127.0.0.1"]])
+    try:
+        fetcher = Fetcher(timeout=5, max_bytes=10_000, max_redirects=0, user_agent="TestBot/1.0", respect_robots=False,
+                          resolver=lambda host: next(answers), min_delay_per_host=0)
+        result = fetcher.fetch(f"http://rebind.example:{server.server_port}/admin")
+    finally:
+        server.shutdown()
+    assert result.status == FetchStatus.UNSAFE_URL and "non-public" in result.error
+    assert hits == []
+
+
+def test_safe_transport_ignores_proxy_settings(monkeypatch):
+    monkeypatch.setenv("HTTPS_PROXY", "http://127.0.0.1:9")
+    client = httpx.Client(transport=SafeTransport(resolver), trust_env=False)
+    assert client._mounts == {}  # no proxy transport mounted from the environment

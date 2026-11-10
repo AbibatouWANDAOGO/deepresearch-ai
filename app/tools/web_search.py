@@ -28,6 +28,7 @@ import httpx
 from pydantic import BaseModel, Field
 
 from app.config import Settings, get_settings
+from app.logs import log
 
 TAVILY_URL = "https://api.tavily.com/search"
 MAX_QUERY_LENGTH = 400
@@ -344,6 +345,8 @@ class WebSearch:
             errors=errors,
         )
         response.raw_path = str(self._save(response, output.raw, research_id))
+        log("web_search", research_id=research_id, provider=provider.name, results=len(response.results),
+            credits=output.credits, fallback=fallback_used, ms=response.duration_ms, errors=errors)
         return response
 
     def _run(self, provider: SearchProvider, query: str, max_results: int) -> ProviderOutput:

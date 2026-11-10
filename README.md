@@ -321,6 +321,27 @@ Fixes, validated by replaying the text rules on the stored verdicts (`--replay-r
 - the phrases that introduced a passage id ("as described in P1", "comme le souligne (passage 1)") are removed with
   it, instead of leaving "as described in." in the report.
 
+## Security
+
+| Threat | Protection | Where |
+| --- | --- | --- |
+| API keys leaking | keys only in `.env` (ignored by git, `.env.example` documents every setting), held as `SecretStr`, shown as "set / not set"; every log line, printed event and stored error goes through `redact`, which replaces configured keys by their name and masks anything shaped like a key or bearer token | [config.py](app/config.py), [logs.py](app/logs.py) |
+| Unexpected spending | paid APIs off unless `ALLOW_PAID_APIS=true`; cost cap per research; local credit ledger for the search quota | [llm.py](app/llm.py), [web_search.py](app/tools/web_search.py) |
+| SSRF: a page or a search result pointing at the machine or the local network | http(s) only, no credentials in URLs, local names refused, every address of the host must be public (private, loopback, link-local, reserved, multicast, IPv4-mapped IPv6 refused); checked again on every redirect and for robots.txt | [url_safety.py](app/tools/url_safety.py) |
+| DNS rebinding: a host that resolves to a public address for the check, then to a private one | the connection is opened by `PinnedBackend` to the address it has just checked: no second resolution; TLS still verifies the certificate against the host name; proxies from the environment are ignored | [url_safety.py](app/tools/url_safety.py) |
+| Oversized or endless downloads | timeouts, streamed bodies cut at `MAX_DOWNLOAD_MB` (after decompression), redirect limit, PDF page limit, text length limit | [web_scraper.py](app/tools/web_scraper.py) |
+| Request rate | at least `MIN_SECONDS_PER_HOST` between two requests to a site, or its robots.txt `Crawl-delay` up to `MAX_CRAWL_DELAY_SECONDS`; robots.txt respected; search retries bounded; one research at a time | [web_scraper.py](app/tools/web_scraper.py), [jobs.py](app/jobs.py) |
+| Prompt injection from web pages | page text reaches the models only inside `<document>` tags, with a rule that it is data, never instructions; tags, quotes and URLs from pages are neutralized so a page cannot close its tag or add attributes; verdicts are re-checked by code; the Writer never sees web text | [base.py](app/agents/base.py), [researcher.py](app/agents/researcher.py) |
+| Malicious content in the report or the dashboard | web text is escaped for Markdown and HTML, only http(s) links are rendered; the dashboard listens on `localhost` only, with XSRF protection | [export.py](app/reports/export.py), [dashboard.py](frontend/dashboard.py), [.streamlit/config.toml](.streamlit/config.toml) |
+
+Logs are JSON lines in `storage/logs/deepresearch.jsonl` (research start, events, end or failure; every model call
+with tokens, time and cost; every search and download with its status), rotated at 5 MB. They contain URLs and
+questions but never a key.
+
+Tested without network: a real HTTP server on `127.0.0.1` and a resolver that answers a public address, then
+`127.0.0.1`, show that the request never reaches the local server; key-shaped strings are masked in logs and in the
+stored error of a failed research; hostile search results cannot close their `<document>` tag.
+
 ## Roadmap
 
 | Phase | Content | Status |
@@ -334,7 +355,7 @@ Fixes, validated by replaying the text rules on the stored verdicts (`--replay-r
 | 7 | Citations and reports: claim traceability, Markdown and PDF export | done |
 | 8 | Streamlit dashboard: history, progress, sources | done |
 | 9 | Evaluation: 10 questions, RAG quality, citation accuracy, coverage, latency, cost | done |
-| 10 | Security: secrets, URL validation, SSRF protection, rate limits, prompt injection | |
+| 10 | Security: secrets, URL validation, SSRF and DNS rebinding protection, rate limits, prompt injection, redacted logs | done |
 | 11 | Packaging: Docker, docker-compose, reproducible demo | |
 
 ## Project structure (current)
@@ -346,7 +367,7 @@ app/
   database/          SQLite connection and source records
   tools/
     web_search.py    search providers, retries, fallback, credit ledger, raw-result storage
-    url_safety.py    URL checks before any download (SSRF protection)
+    url_safety.py    URL checks and connect-time address pinning (SSRF, DNS rebinding)
     web_scraper.py   streamed downloads, redirects, robots.txt, size limits
     pdf_reader.py    PDF text and metadata, page by page
     document_parser.py  extraction, cleaning, de-duplication, storage
@@ -369,10 +390,11 @@ app/
     i18n.py          workflow reasons in the report language
   evaluation/        questions, metrics, citation judge, evaluation runner
   jobs.py            research history, background runs, cancel and resume
+  logs.py            structured JSON logs with secret redaction
   llm.py             Ollama and Anthropic clients with structured output and cost tracking
 eval/                questions, manual annotations, results
 frontend/
   dashboard.py       Streamlit dashboard: new research, progress, history, report, claims, sources
 storage/             local documents, vector index, database, reports (not committed)
-tests/               258 tests, no network, no credits and no model download
+tests/               280 tests, no network, no credits and no model download
 ```

@@ -73,6 +73,10 @@ class Settings(BaseSettings):
     max_download_mb: float = Field(default=10.0, gt=0)
     max_redirects: int = Field(default=5, ge=0, le=10)
     respect_robots_txt: bool = True
+    # Politeness and rate limit: seconds between two requests to the same site; a robots.txt
+    # Crawl-delay is honoured up to max_crawl_delay_seconds.
+    min_seconds_per_host: float = Field(default=1.0, ge=0)
+    max_crawl_delay_seconds: float = Field(default=10.0, ge=0)
     user_agent: str = "DeepResearchAI/0.1 (research assistant; educational project)"
 
     # --- Document processing -------------------------------------------------------

@@ -211,7 +211,7 @@ def research_page(settings: Settings, manager: JobManager) -> None:
         st.info("Start a research or pick one in the history.")
         return
 
-    st.header(record.question)
+    st.header(md_escape(record.question))
     st.markdown(f"{RUN_BADGE[record.status]} &nbsp; `{record.research_id}` · {LANGUAGES.get(record.language)} · "
                 f"depth {record.params.depth} · max {record.params.max_sources} sources · {elapsed(record)}")
     actions(manager, record)

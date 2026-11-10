@@ -17,11 +17,13 @@ from __future__ import annotations
 
 import argparse
 import json
+import logging
 import os
 import signal
 import sqlite3
 import subprocess
 import sys
+import time
 import uuid
 from collections.abc import Callable, Iterator
 from contextlib import contextmanager
@@ -34,6 +36,7 @@ from pydantic import BaseModel, Field
 
 from app.config import Settings
 from app.database.connection import connect
+from app.logs import log, redact, setup_logging
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
@@ -315,6 +318,7 @@ def run_job(research_id: str, resume: bool = False, base: Settings | None = None
     from app.graph.workflow import build_runner
 
     base = base or get_settings()
+    setup_logging(base)
     repo = ResearchRepository(connect(base.documents_db_path))
     record = repo.get(research_id)
     if record is None:
@@ -326,6 +330,8 @@ def run_job(research_id: str, resume: bool = False, base: Settings | None = None
 
 
 def _run(repo, research_id, record, resume, base, runner_factory) -> int:
+    started = time.monotonic()
+    log("research_started", research_id=research_id, resume=resume, params=record.params.model_dump())
     try:
         runner = runner_factory(research_settings(base, record.params))
         if resume:
@@ -337,16 +343,21 @@ def _run(repo, research_id, record, resume, base, runner_factory) -> int:
             steps = runner.stream(record.question, record.language, research_id)
         for node, update in steps:
             for e in (update or {}).get("events", []):
-                print(f"{e['node']:<10} {e['message']}", flush=True)
+                print(redact(f"{e['node']:<10} {e['message']}"), flush=True)
+                log("research_event", research_id=research_id, node=e["node"], message=e["message"])
             pending = runner.pending(research_id)
             repo.update(research_id, current_step=pending[0] if pending else node)
         state = runner.state(research_id)
     except Exception as exc:
-        repo.update(research_id, status=ResearchStatus.FAILED, error=f"{type(exc).__name__}: {exc}"[:500],
-                    pid=None, finished_at=now())
+        error = redact(f"{type(exc).__name__}: {exc}")[:500]
+        repo.update(research_id, status=ResearchStatus.FAILED, error=error, pid=None, finished_at=now())
+        log("research_failed", logging.ERROR, research_id=research_id, error=error,
+            seconds=round(time.monotonic() - started, 1))
         raise
     repo.update(research_id, status=ResearchStatus.COMPLETED, current_step=None, pid=None, finished_at=now(),
                 stop_reason=state.get("stop_reason"))
+    log("research_completed", research_id=research_id, stop_reason=state.get("stop_reason"),
+        seconds=round(time.monotonic() - started, 1))
     return 0
 
 

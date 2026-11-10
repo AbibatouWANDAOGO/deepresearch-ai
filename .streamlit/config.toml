@@ -1,0 +1,14 @@
+# Read by `streamlit run frontend/dashboard.py` started from the project root.
+[server]
+# Only this computer can open the dashboard: it starts researches and shows local files.
+address = "localhost"
+headless = true
+enableXsrfProtection = true
+enableCORS = true
+maxUploadSize = 1
+
+[browser]
+gatherUsageStats = false
+
+[client]
+toolbarMode = "minimal"
